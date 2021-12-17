@@ -10,13 +10,15 @@ namespace MCGalaxy {
 		public override string name { get { return "OsBuilderPlugin"; } }
 		
 		public override void Load(bool startup) {
-			OnJoiningLevelEvent.Register(DoDemotePlayer, Priority.Low);
+			OnJoiningLevelEvent.Register(DoDemoteAfterLevel, Priority.Low);
 			OnJoinedLevelEvent.Register(DoPromotePlayer, Priority.Low);
+            OnPlayerConnectEvent.Register(DoDemotePlayer, Priority.Low);
 		}
 		
 		public override void Unload(bool shutdown) {
-			OnJoiningLevelEvent.Unregister(DoDemotePlayer);
+			OnJoiningLevelEvent.Unregister(DoDemoteAfterLevel);
 			OnJoinedLevelEvent.Unregister(DoPromotePlayer);
+            OnPlayerConnectEvent.Unregister(DoDemotePlayer);
 		}
 
 		void DoPromotePlayer(Player p, Level prevLevel, Level level, ref bool announce) {
@@ -35,8 +37,12 @@ namespace MCGalaxy {
             OnModActionEvent.Call(action);
 
 		}
-		
-		void DoDemotePlayer(Player p, Level lvl, ref bool canJoin) {
+
+		void DoDemoteAfterLevel(Player p, Level lvl, ref bool canJoin) {
+            DoDemotePlayer(p);
+        }
+
+		void DoDemotePlayer(Player p) {
             if (p.Rank != LevelPermission.Builder) return;
 
             Group curRank = PlayerInfo.GetGroup(p.name);
@@ -45,8 +51,9 @@ namespace MCGalaxy {
             ModAction action = new ModAction(p.name, Player.Console, ModActionType.Rank, null);
             // action.targetGroup = curRank;
             action.Metadata = newRank;
-            //action.Announce = false;
+            action.Announce = false;
             OnModActionEvent.Call(action);
 		}
+
 	}
 }
