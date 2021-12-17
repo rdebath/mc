@@ -1,3 +1,10 @@
+This is some of my extras for MCGalaxy
+
+There are some plugins in the addins directory.
+
+
+The rest is texture packs.
+
 base-badlands.zip           https://raw.githubusercontent.com/rdebath/mc/zip/026d0a76.zip
 base-birchforest.zip        https://raw.githubusercontent.com/rdebath/mc/zip/20a08b5d.zip
 base-coldswamphills.zip     https://raw.githubusercontent.com/rdebath/mc/zip/9f10bf94.zip
