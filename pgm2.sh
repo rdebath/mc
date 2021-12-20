@@ -1,12 +1,17 @@
+#!/bin/bash -
 
+for i in $(awk '/texture.*192.168/{j=$0; sub(".*/","",j); print j;}' mcscript/*.mc | sort -u)
+do
+    [ "$i" = '.zip' ] && continue
 
-for i in $(awk '/texture/{j=$0; sub(".*/","",j); print j;}' mcscript/*.mc | sort -u)
-do j=$(md5sum "texpack-$i"| awk '{print substr($1,1,8);}' )
+    j=$(md5sum "texpack/texpack-$i"| awk '{print substr($1,1,8);}' )
+    [ "$j" = '' ] && continue
 
-echo "s@\\(os map texture \\).*$i@\\\\1https://raw.githubusercontent.com/rdebath/mc/zip/$j.zip@"
+    echo "s@\\(os map texture \\).*$i@\\\\1https://raw.githubusercontent.com/rdebath/mc/zip/$j.zip@"
 
-done > pgm2.sed
+done > tmp_pgm.sed
 
-for i in mcscript/*.mc
-do sed -i -f pgm2.sed "$i"
+for i in mcscript/Block-cmd*.mc
+do sed -i -f tmp_pgm.sed "$i"
 done
+
