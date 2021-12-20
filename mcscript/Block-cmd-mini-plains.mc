@@ -1,4 +1,4 @@
-os map texture https://raw.githubusercontent.com/rdebath/mc/zip/ea574367.zip
+os map texture https://raw.githubusercontent.com/rdebath/mc/zip/476d8da0.zip
 os lb remove 1
 os blockprops 1 reset
 os lb remove 2
@@ -135,8 +135,6 @@ os lb remove 64
 os blockprops 64 reset
 os lb remove 65
 os blockprops 65 reset
-os lb copy 8 8
-os lb edit 8 alltex 123
 os lb remove 66
 os lb copy 62 66
 os blockprops 66 reset
@@ -565,6 +563,8 @@ os lb copy 20 112
 os blockprops 112 reset
 os lb edit 112 name Barrier Visible
 os lb edit 112 alltex 122
+os lb copy 8 8
+os lb edit 8 alltex 123
 os lb remove 114
 os lb copy 1 114
 os blockprops 114 reset

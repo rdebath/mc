@@ -1,4 +1,4 @@
-os map texture https://raw.githubusercontent.com/rdebath/mc/zip/3593f82f.zip
+os map texture https://raw.githubusercontent.com/rdebath/mc/zip/e8cf16d6.zip
 os lb remove 1
 os blockprops 1 reset
 os lb remove 2
@@ -135,8 +135,6 @@ os lb remove 64
 os blockprops 64 reset
 os lb remove 65
 os blockprops 65 reset
-os lb copy 8 8
-os lb edit 8 alltex 85
 os lb remove 66
 os lb copy 62 66
 os blockprops 66 reset
@@ -565,6 +563,8 @@ os lb copy 20 112
 os blockprops 112 reset
 os lb edit 112 name Barrier Visible
 os lb edit 112 alltex 122
+os lb copy 8 8
+os lb edit 8 alltex 123
 os lb remove 114
 os lb copy 1 114
 os blockprops 114 reset
@@ -2208,19 +2208,19 @@ os lb remove 283
 os lb copy 18 283
 os blockprops 283 reset
 os lb edit 283 name Warped Leaves
-os lb edit 283 alltex 161
+os lb edit 283 alltex 168
 os blockprops 283 lavakills
 os lb remove 284
 os lb copy 5 284
 os blockprops 284 reset
 os lb edit 284 name Warped Planks
-os lb edit 284 alltex 168
+os lb edit 284 alltex 169
 os blockprops 284 lavakills
 os lb remove 285
 os lb copy 39 285
 os blockprops 285 reset
 os lb edit 285 name Warped Fungus
-os lb edit 285 alltex 169
+os lb edit 285 alltex 170
 os lb edit 285 sound 3
 os blockprops 285 waterkills
 os blockprops 285 lavakills
@@ -2233,24 +2233,24 @@ os lb remove 287
 os lb copy 12 287
 os blockprops 287 reset
 os lb edit 287 name Red Sand
-os lb edit 287 alltex 170
+os lb edit 287 alltex 171
 os lb remove 288
 os lb copy 1 288
 os blockprops 288 reset
 os lb edit 288 name Red Sandstone
-os lb edit 288 toptex 171
-os lb edit 288 bottomtex 172
-os lb edit 288 sidetex 173
+os lb edit 288 toptex 172
+os lb edit 288 bottomtex 173
+os lb edit 288 sidetex 174
 os lb remove 289
 os lb copy 1 289
 os blockprops 289 reset
 os lb edit 289 name Nether Bricks
-os lb edit 289 alltex 174
+os lb edit 289 alltex 175
 os lb remove 290
 os lb copy 37 290
 os blockprops 290 reset
 os lb edit 290 name Wither Rose
-os lb edit 290 alltex 175
+os lb edit 290 alltex 176
 os lb edit 290 sound 3
 os blockprops 290 waterkills
 os blockprops 290 lavakills
@@ -2258,17 +2258,17 @@ os lb remove 291
 os lb copy 1 291
 os blockprops 291 reset
 os lb edit 291 name Nether Gold Ore
-os lb edit 291 alltex 176
+os lb edit 291 alltex 177
 os lb remove 292
 os lb copy 1 292
 os blockprops 292 reset
 os lb edit 292 name Polished Blackstone
-os lb edit 292 alltex 177
+os lb edit 292 alltex 178
 os lb remove 293
 os lb copy 1 293
 os blockprops 293 reset
 os lb edit 293 name Polished Blackstone Bricks
-os lb edit 293 alltex 178
+os lb edit 293 alltex 179
 os lb remove 20
 os lb remove 113
 os lb remove 253-255

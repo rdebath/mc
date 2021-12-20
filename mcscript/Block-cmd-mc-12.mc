@@ -1,3 +1,4 @@
+os map texture https://raw.githubusercontent.com/rdebath/mc/zip/c4b19bb5.zip
 os lb remove 1
 os blockprops 1 reset
 os lb remove 2
@@ -134,109 +135,6 @@ os lb remove 64
 os blockprops 64 reset
 os lb remove 65
 os blockprops 65 reset
-os lb copy 21 21
-os lb edit 21 fullbright 1
-os lb edit 21 name #Red
-os lb edit 21 fogcolor #ff3a3a
-os lb edit 21 alltex 95
-os lb copy 22 22
-os lb edit 22 fullbright 1
-os lb edit 22 name #Orange
-os lb edit 22 fogcolor #ff9c3a
-os lb edit 22 alltex 95
-os lb copy 23 23
-os lb edit 23 fullbright 1
-os lb edit 23 name #Yellow
-os lb edit 23 fogcolor #ffff3a
-os lb edit 23 alltex 95
-os lb copy 24 24
-os lb edit 24 fullbright 1
-os lb edit 24 name #Lime
-os lb edit 24 fogcolor #9cff3a
-os lb edit 24 alltex 95
-os lb copy 25 25
-os lb edit 25 fullbright 1
-os lb edit 25 name #Green
-os lb edit 25 fogcolor #3aff3a
-os lb edit 25 alltex 95
-os lb copy 26 26
-os lb edit 26 fullbright 1
-os lb edit 26 name #Teal
-os lb edit 26 fogcolor #3aff9c
-os lb edit 26 alltex 95
-os lb copy 27 27
-os lb edit 27 fullbright 1
-os lb edit 27 name #Aqua
-os lb edit 27 fogcolor #3affff
-os lb edit 27 alltex 95
-os lb copy 28 28
-os lb edit 28 fullbright 1
-os lb edit 28 name #Cyan
-os lb edit 28 fogcolor #78bbff
-os lb edit 28 alltex 95
-os lb copy 29 29
-os lb edit 29 fullbright 1
-os lb edit 29 name #Blue
-os lb edit 29 fogcolor #8a8aff
-os lb edit 29 alltex 95
-os lb copy 30 30
-os lb edit 30 fullbright 1
-os lb edit 30 name #Indigo
-os lb edit 30 fogcolor #9c3aff
-os lb edit 30 alltex 95
-os lb copy 31 31
-os lb edit 31 fullbright 1
-os lb edit 31 name #Violet
-os lb edit 31 fogcolor #c855ff
-os lb edit 31 alltex 95
-os lb copy 32 32
-os lb edit 32 fullbright 1
-os lb edit 32 name #Magenta
-os lb edit 32 fogcolor #ff3aff
-os lb edit 32 alltex 95
-os lb copy 33 33
-os lb edit 33 fullbright 1
-os lb edit 33 name #Pink
-os lb edit 33 fogcolor #ff3a9c
-os lb edit 33 alltex 95
-os lb copy 34 34
-os lb edit 34 fullbright 1
-os lb edit 34 name #Black
-os lb edit 34 alltex 94
-os lb copy 35 35
-os lb edit 35 fullbright 1
-os lb edit 35 name #Gray
-os lb edit 35 fogcolor #a7a7a7
-os lb edit 35 alltex 95
-os lb copy 36 36
-os lb edit 36 fullbright 1
-os lb edit 36 name #White
-os lb edit 36 alltex 95
-os lb copy 55 55
-os lb edit 55 fullbright 1
-os lb edit 55 name #Light pink
-os lb edit 55 fogcolor #dea6b6
-os lb edit 55 alltex 95
-os lb copy 56 56
-os lb edit 56 fullbright 1
-os lb edit 56 name #Forest green
-os lb edit 56 fogcolor #3d5220
-os lb edit 56 alltex 95
-os lb copy 57 57
-os lb edit 57 fullbright 1
-os lb edit 57 name #Brown
-os lb edit 57 fogcolor #5c3a24
-os lb edit 57 alltex 95
-os lb copy 58 58
-os lb edit 58 fullbright 1
-os lb edit 58 name #Deep blue
-os lb edit 58 fogcolor #3640a4
-os lb edit 58 alltex 95
-os lb copy 59 59
-os lb edit 59 fullbright 1
-os lb edit 59 name #Turquoise
-os lb edit 59 fogcolor #36809e
-os lb edit 59 alltex 95
 os lb remove 66
 os lb copy 62 66
 os blockprops 66 reset
@@ -364,6 +262,7 @@ os lb remove 83
 os lb copy 39 83
 os blockprops 83 reset
 os lb edit 83 name Tall Grass
+os lb edit 83 name #Tall Grass
 os lb edit 83 alltex 89
 os lb edit 83 sound 3
 os lb edit 83 draw 6
@@ -373,6 +272,7 @@ os lb remove 84
 os lb copy 39 84
 os blockprops 84 reset
 os lb edit 84 name Tall Grass Top
+os lb edit 84 name #Tall Grass Top
 os lb edit 84 alltex 90
 os lb edit 84 sound 3
 os lb edit 84 draw 7
@@ -382,6 +282,7 @@ os lb remove 85
 os lb copy 39 85
 os blockprops 85 reset
 os lb edit 85 name Tall Grass Bottom
+os lb edit 85 name #Tall Grass Bottom
 os lb edit 85 alltex 91
 os lb edit 85 sound 3
 os lb edit 85 draw 7
@@ -488,6 +389,7 @@ os lb remove 94
 os lb copy 39 94
 os blockprops 94 reset
 os lb edit 94 name Fern
+os lb edit 94 name #Fern
 os lb edit 94 alltex 108
 os lb edit 94 sound 3
 os blockprops 94 waterkills
@@ -552,8 +454,8 @@ os lb copy 5 102
 os blockprops 102 reset
 os lb edit 102 name Oak Door-NS
 os lb edit 102 alltex 4
-os lb edit 102 lefttex 117
-os lb edit 102 righttex 117
+os lb edit 102 lefttex 261
+os lb edit 102 righttex 261
 os lb edit 102 max 9 16 16
 os lb edit 102 min 7 0 0
 os lb edit 102 draw 2
@@ -565,8 +467,8 @@ os lb copy 5 103
 os blockprops 103 reset
 os lb edit 103 name Oak Door-WE
 os lb edit 103 alltex 4
-os lb edit 103 fronttex 117
-os lb edit 103 backtex 117
+os lb edit 103 fronttex 261
+os lb edit 103 backtex 261
 os lb edit 103 max 16 16 9
 os lb edit 103 min 0 0 7
 os lb edit 103 draw 2
@@ -578,8 +480,8 @@ os lb copy 5 104
 os blockprops 104 reset
 os lb edit 104 name Oak Door Bottom-NS
 os lb edit 104 alltex 4
-os lb edit 104 lefttex 118
-os lb edit 104 righttex 118
+os lb edit 104 lefttex 277
+os lb edit 104 righttex 277
 os lb edit 104 max 9 16 16
 os lb edit 104 min 7 0 0
 os lb edit 104 draw 2
@@ -591,8 +493,8 @@ os lb copy 5 105
 os blockprops 105 reset
 os lb edit 105 name Oak Door Bottom-WE
 os lb edit 105 alltex 4
-os lb edit 105 fronttex 118
-os lb edit 105 backtex 118
+os lb edit 105 fronttex 277
+os lb edit 105 backtex 277
 os lb edit 105 max 16 16 9
 os lb edit 105 min 0 0 7
 os lb edit 105 draw 2
@@ -604,8 +506,8 @@ os lb copy 42 106
 os blockprops 106 reset
 os lb edit 106 name Iron Door-NS
 os lb edit 106 alltex 23
-os lb edit 106 lefttex 119
-os lb edit 106 righttex 119
+os lb edit 106 lefttex 259
+os lb edit 106 righttex 259
 os lb edit 106 max 9 16 16
 os lb edit 106 min 7 0 0
 os lb edit 106 draw 2
@@ -616,8 +518,8 @@ os lb copy 42 107
 os blockprops 107 reset
 os lb edit 107 name Iron Door-WE
 os lb edit 107 alltex 23
-os lb edit 107 fronttex 119
-os lb edit 107 backtex 119
+os lb edit 107 fronttex 259
+os lb edit 107 backtex 259
 os lb edit 107 max 16 16 9
 os lb edit 107 min 0 0 7
 os lb edit 107 draw 2
@@ -628,8 +530,8 @@ os lb copy 42 108
 os blockprops 108 reset
 os lb edit 108 name Iron Door Bottom-NS
 os lb edit 108 alltex 23
-os lb edit 108 lefttex 120
-os lb edit 108 righttex 120
+os lb edit 108 lefttex 275
+os lb edit 108 righttex 275
 os lb edit 108 max 9 16 16
 os lb edit 108 min 7 0 0
 os lb edit 108 draw 2
@@ -640,8 +542,8 @@ os lb copy 42 109
 os blockprops 109 reset
 os lb edit 109 name Iron Door Bottom-WE
 os lb edit 109 alltex 23
-os lb edit 109 fronttex 120
-os lb edit 109 backtex 120
+os lb edit 109 fronttex 275
+os lb edit 109 backtex 275
 os lb edit 109 max 16 16 9
 os lb edit 109 min 0 0 7
 os lb edit 109 draw 2
@@ -651,20 +553,22 @@ os lb remove 110
 os lb copy 60 110
 os blockprops 110 reset
 os lb edit 110 name Forcefield
-os lb edit 110 alltex 121
+os lb edit 110 alltex 117
 os lb edit 110 fullbright 1
 os lb edit 110 blockslight 0
 os lb remove 111
 os lb copy 20 111
 os blockprops 111 reset
 os lb edit 111 name Barrier
-os lb edit 111 alltex 122
+os lb edit 111 alltex 118
 os lb edit 111 draw 4
 os lb remove 112
 os lb copy 20 112
 os blockprops 112 reset
 os lb edit 112 name Barrier Visible
-os lb edit 112 alltex 122
+os lb edit 112 alltex 118
+os lb copy 8 8
+os lb edit 8 alltex 119
 os lb remove 114
 os lb copy 1 114
 os blockprops 114 reset
@@ -1490,10 +1394,367 @@ os lb edit 210 shape 0
 os lb edit 210 min 8 8 0
 os lb edit 210 blockslight no
 os lb edit 210 fallback 0
+os lb remove 211
+os lb copy 21 211
+os blockprops 211 reset
+os lb edit 211 name Red Slab-D
+os lb edit 211 shape 0
+os lb edit 211 max 16 8 16
+os blockprops 211 stackblock 21
+os blockprops 211 lavakills
+os lb edit 211 fallback 44
+os lb remove 212
+os lb copy 21 212
+os blockprops 212 reset
+os lb edit 212 name Red Slab-U
+os lb edit 212 shape 0
+os lb edit 212 min 0 8 0
+os blockprops 212 lavakills
+os lb edit 212 fallback 21
+os lb remove 213
+os lb copy 22 213
+os blockprops 213 reset
+os lb edit 213 name Orange Slab-D
+os lb edit 213 shape 0
+os lb edit 213 max 16 8 16
+os blockprops 213 stackblock 22
+os blockprops 213 lavakills
+os lb edit 213 fallback 44
+os lb remove 214
+os lb copy 22 214
+os blockprops 214 reset
+os lb edit 214 name Orange Slab-U
+os lb edit 214 shape 0
+os lb edit 214 min 0 8 0
+os blockprops 214 lavakills
+os lb edit 214 fallback 22
+os lb remove 215
+os lb copy 23 215
+os blockprops 215 reset
+os lb edit 215 name Yellow Slab-D
+os lb edit 215 shape 0
+os lb edit 215 max 16 8 16
+os blockprops 215 stackblock 23
+os blockprops 215 lavakills
+os lb edit 215 fallback 44
+os lb remove 216
+os lb copy 23 216
+os blockprops 216 reset
+os lb edit 216 name Yellow Slab-U
+os lb edit 216 shape 0
+os lb edit 216 min 0 8 0
+os blockprops 216 lavakills
+os lb edit 216 fallback 23
+os lb remove 217
+os lb copy 24 217
+os blockprops 217 reset
+os lb edit 217 name Lime Slab-D
+os lb edit 217 shape 0
+os lb edit 217 max 16 8 16
+os blockprops 217 stackblock 24
+os blockprops 217 lavakills
+os lb edit 217 fallback 44
+os lb remove 218
+os lb copy 24 218
+os blockprops 218 reset
+os lb edit 218 name Lime Slab-U
+os lb edit 218 shape 0
+os lb edit 218 min 0 8 0
+os blockprops 218 lavakills
+os lb edit 218 fallback 24
+os lb remove 219
+os lb copy 25 219
+os blockprops 219 reset
+os lb edit 219 name Green Slab-D
+os lb edit 219 shape 0
+os lb edit 219 max 16 8 16
+os blockprops 219 stackblock 25
+os blockprops 219 lavakills
+os lb edit 219 fallback 44
+os lb remove 220
+os lb copy 25 220
+os blockprops 220 reset
+os lb edit 220 name Green Slab-U
+os lb edit 220 shape 0
+os lb edit 220 min 0 8 0
+os blockprops 220 lavakills
+os lb edit 220 fallback 25
+os lb remove 221
+os lb copy 26 221
+os blockprops 221 reset
+os lb edit 221 name Teal Slab-D
+os lb edit 221 shape 0
+os lb edit 221 max 16 8 16
+os blockprops 221 stackblock 26
+os blockprops 221 lavakills
+os lb edit 221 fallback 44
+os lb remove 222
+os lb copy 26 222
+os blockprops 222 reset
+os lb edit 222 name Teal Slab-U
+os lb edit 222 shape 0
+os lb edit 222 min 0 8 0
+os blockprops 222 lavakills
+os lb edit 222 fallback 26
+os lb remove 223
+os lb copy 27 223
+os blockprops 223 reset
+os lb edit 223 name Aqua Slab-D
+os lb edit 223 shape 0
+os lb edit 223 max 16 8 16
+os blockprops 223 stackblock 27
+os blockprops 223 lavakills
+os lb edit 223 fallback 44
+os lb remove 224
+os lb copy 27 224
+os blockprops 224 reset
+os lb edit 224 name Aqua Slab-U
+os lb edit 224 shape 0
+os lb edit 224 min 0 8 0
+os blockprops 224 lavakills
+os lb edit 224 fallback 27
+os lb remove 225
+os lb copy 28 225
+os blockprops 225 reset
+os lb edit 225 name Cyan Slab-D
+os lb edit 225 shape 0
+os lb edit 225 max 16 8 16
+os blockprops 225 stackblock 28
+os blockprops 225 lavakills
+os lb edit 225 fallback 44
+os lb remove 226
+os lb copy 28 226
+os blockprops 226 reset
+os lb edit 226 name Cyan Slab-U
+os lb edit 226 shape 0
+os lb edit 226 min 0 8 0
+os blockprops 226 lavakills
+os lb edit 226 fallback 28
+os lb remove 227
+os lb copy 29 227
+os blockprops 227 reset
+os lb edit 227 name Blue Slab-D
+os lb edit 227 shape 0
+os lb edit 227 max 16 8 16
+os blockprops 227 stackblock 29
+os blockprops 227 lavakills
+os lb edit 227 fallback 44
+os lb remove 228
+os lb copy 29 228
+os blockprops 228 reset
+os lb edit 228 name Blue Slab-U
+os lb edit 228 shape 0
+os lb edit 228 min 0 8 0
+os blockprops 228 lavakills
+os lb edit 228 fallback 29
+os lb remove 229
+os lb copy 30 229
+os blockprops 229 reset
+os lb edit 229 name Indigo Slab-D
+os lb edit 229 shape 0
+os lb edit 229 max 16 8 16
+os blockprops 229 stackblock 30
+os blockprops 229 lavakills
+os lb edit 229 fallback 44
+os lb remove 230
+os lb copy 30 230
+os blockprops 230 reset
+os lb edit 230 name Indigo Slab-U
+os lb edit 230 shape 0
+os lb edit 230 min 0 8 0
+os blockprops 230 lavakills
+os lb edit 230 fallback 30
+os lb remove 231
+os lb copy 31 231
+os blockprops 231 reset
+os lb edit 231 name Violet Slab-D
+os lb edit 231 shape 0
+os lb edit 231 max 16 8 16
+os blockprops 231 stackblock 31
+os blockprops 231 lavakills
+os lb edit 231 fallback 44
+os lb remove 232
+os lb copy 31 232
+os blockprops 232 reset
+os lb edit 232 name Violet Slab-U
+os lb edit 232 shape 0
+os lb edit 232 min 0 8 0
+os blockprops 232 lavakills
+os lb edit 232 fallback 31
+os lb remove 233
+os lb copy 32 233
+os blockprops 233 reset
+os lb edit 233 name Magenta Slab-D
+os lb edit 233 shape 0
+os lb edit 233 max 16 8 16
+os blockprops 233 stackblock 32
+os blockprops 233 lavakills
+os lb edit 233 fallback 44
+os lb remove 234
+os lb copy 32 234
+os blockprops 234 reset
+os lb edit 234 name Magenta Slab-U
+os lb edit 234 shape 0
+os lb edit 234 min 0 8 0
+os blockprops 234 lavakills
+os lb edit 234 fallback 32
+os lb remove 235
+os lb copy 33 235
+os blockprops 235 reset
+os lb edit 235 name Pink Slab-D
+os lb edit 235 shape 0
+os lb edit 235 max 16 8 16
+os blockprops 235 stackblock 33
+os blockprops 235 lavakills
+os lb edit 235 fallback 44
+os lb remove 236
+os lb copy 33 236
+os blockprops 236 reset
+os lb edit 236 name Pink Slab-U
+os lb edit 236 shape 0
+os lb edit 236 min 0 8 0
+os blockprops 236 lavakills
+os lb edit 236 fallback 33
+os lb remove 237
+os lb copy 34 237
+os blockprops 237 reset
+os lb edit 237 name Black Slab-D
+os lb edit 237 shape 0
+os lb edit 237 max 16 8 16
+os blockprops 237 stackblock 34
+os blockprops 237 lavakills
+os lb edit 237 fallback 44
+os lb remove 238
+os lb copy 34 238
+os blockprops 238 reset
+os lb edit 238 name Black Slab-U
+os lb edit 238 shape 0
+os lb edit 238 min 0 8 0
+os blockprops 238 lavakills
+os lb edit 238 fallback 34
+os lb remove 239
+os lb copy 35 239
+os blockprops 239 reset
+os lb edit 239 name Gray Slab-D
+os lb edit 239 shape 0
+os lb edit 239 max 16 8 16
+os blockprops 239 stackblock 35
+os blockprops 239 lavakills
+os lb edit 239 fallback 44
+os lb remove 240
+os lb copy 35 240
+os blockprops 240 reset
+os lb edit 240 name Gray Slab-U
+os lb edit 240 shape 0
+os lb edit 240 min 0 8 0
+os blockprops 240 lavakills
+os lb edit 240 fallback 35
+os lb remove 241
+os lb copy 36 241
+os blockprops 241 reset
+os lb edit 241 name White Slab-D
+os lb edit 241 shape 0
+os lb edit 241 max 16 8 16
+os blockprops 241 stackblock 36
+os blockprops 241 lavakills
+os lb edit 241 fallback 44
+os lb remove 242
+os lb copy 36 242
+os blockprops 242 reset
+os lb edit 242 name White Slab-U
+os lb edit 242 shape 0
+os lb edit 242 min 0 8 0
+os blockprops 242 lavakills
+os lb edit 242 fallback 36
+os lb remove 243
+os lb copy 55 243
+os blockprops 243 reset
+os lb edit 243 name Light pink Slab-D
+os lb edit 243 shape 0
+os lb edit 243 max 16 8 16
+os blockprops 243 stackblock 55
+os blockprops 243 lavakills
+os lb edit 243 fallback 44
+os lb remove 244
+os lb copy 55 244
+os blockprops 244 reset
+os lb edit 244 name Light pink Slab-U
+os lb edit 244 shape 0
+os lb edit 244 min 0 8 0
+os blockprops 244 lavakills
+os lb edit 244 fallback 55
+os lb remove 245
+os lb copy 56 245
+os blockprops 245 reset
+os lb edit 245 name Forest green Slab-D
+os lb edit 245 shape 0
+os lb edit 245 max 16 8 16
+os blockprops 245 stackblock 56
+os blockprops 245 lavakills
+os lb edit 245 fallback 44
+os lb remove 246
+os lb copy 56 246
+os blockprops 246 reset
+os lb edit 246 name Forest green Slab-U
+os lb edit 246 shape 0
+os lb edit 246 min 0 8 0
+os blockprops 246 lavakills
+os lb edit 246 fallback 56
+os lb remove 247
+os lb copy 57 247
+os blockprops 247 reset
+os lb edit 247 name Brown Slab-D
+os lb edit 247 shape 0
+os lb edit 247 max 16 8 16
+os blockprops 247 stackblock 57
+os blockprops 247 lavakills
+os lb edit 247 fallback 44
+os lb remove 248
+os lb copy 57 248
+os blockprops 248 reset
+os lb edit 248 name Brown Slab-U
+os lb edit 248 shape 0
+os lb edit 248 min 0 8 0
+os blockprops 248 lavakills
+os lb edit 248 fallback 57
+os lb remove 249
+os lb copy 58 249
+os blockprops 249 reset
+os lb edit 249 name Deep blue Slab-D
+os lb edit 249 shape 0
+os lb edit 249 max 16 8 16
+os blockprops 249 stackblock 58
+os blockprops 249 lavakills
+os lb edit 249 fallback 44
+os lb remove 250
+os lb copy 58 250
+os blockprops 250 reset
+os lb edit 250 name Deep blue Slab-U
+os lb edit 250 shape 0
+os lb edit 250 min 0 8 0
+os blockprops 250 lavakills
+os lb edit 250 fallback 58
+os lb remove 251
+os lb copy 59 251
+os blockprops 251 reset
+os lb edit 251 name Turquoise Slab-D
+os lb edit 251 shape 0
+os lb edit 251 max 16 8 16
+os blockprops 251 stackblock 59
+os blockprops 251 lavakills
+os lb edit 251 fallback 44
+os lb remove 252
+os lb copy 59 252
+os blockprops 252 reset
+os lb edit 252 name Turquoise Slab-U
+os lb edit 252 shape 0
+os lb edit 252 min 0 8 0
+os blockprops 252 lavakills
+os lb edit 252 fallback 59
 os lb remove 381
 os lb copy 21 381
 os blockprops 381 reset
-os lb edit 381 name #Red Tile-D
+os lb edit 381 name Red Tile-D
 os lb edit 381 shape 0
 os lb edit 381 collide 0
 os lb edit 381 max 16 1 16
@@ -1502,7 +1763,7 @@ os lb edit 381 fallback 44
 os lb remove 382
 os lb copy 22 382
 os blockprops 382 reset
-os lb edit 382 name #Orange Tile-D
+os lb edit 382 name Orange Tile-D
 os lb edit 382 shape 0
 os lb edit 382 collide 0
 os lb edit 382 max 16 1 16
@@ -1511,7 +1772,7 @@ os lb edit 382 fallback 44
 os lb remove 383
 os lb copy 23 383
 os blockprops 383 reset
-os lb edit 383 name #Yellow Tile-D
+os lb edit 383 name Yellow Tile-D
 os lb edit 383 shape 0
 os lb edit 383 collide 0
 os lb edit 383 max 16 1 16
@@ -1520,7 +1781,7 @@ os lb edit 383 fallback 44
 os lb remove 384
 os lb copy 24 384
 os blockprops 384 reset
-os lb edit 384 name #Lime Tile-D
+os lb edit 384 name Lime Tile-D
 os lb edit 384 shape 0
 os lb edit 384 collide 0
 os lb edit 384 max 16 1 16
@@ -1529,7 +1790,7 @@ os lb edit 384 fallback 44
 os lb remove 385
 os lb copy 25 385
 os blockprops 385 reset
-os lb edit 385 name #Green Tile-D
+os lb edit 385 name Green Tile-D
 os lb edit 385 shape 0
 os lb edit 385 collide 0
 os lb edit 385 max 16 1 16
@@ -1538,7 +1799,7 @@ os lb edit 385 fallback 44
 os lb remove 386
 os lb copy 26 386
 os blockprops 386 reset
-os lb edit 386 name #Teal Tile-D
+os lb edit 386 name Teal Tile-D
 os lb edit 386 shape 0
 os lb edit 386 collide 0
 os lb edit 386 max 16 1 16
@@ -1547,7 +1808,7 @@ os lb edit 386 fallback 44
 os lb remove 387
 os lb copy 27 387
 os blockprops 387 reset
-os lb edit 387 name #Aqua Tile-D
+os lb edit 387 name Aqua Tile-D
 os lb edit 387 shape 0
 os lb edit 387 collide 0
 os lb edit 387 max 16 1 16
@@ -1556,7 +1817,7 @@ os lb edit 387 fallback 44
 os lb remove 388
 os lb copy 28 388
 os blockprops 388 reset
-os lb edit 388 name #Cyan Tile-D
+os lb edit 388 name Cyan Tile-D
 os lb edit 388 shape 0
 os lb edit 388 collide 0
 os lb edit 388 max 16 1 16
@@ -1565,7 +1826,7 @@ os lb edit 388 fallback 44
 os lb remove 389
 os lb copy 29 389
 os blockprops 389 reset
-os lb edit 389 name #Blue Tile-D
+os lb edit 389 name Blue Tile-D
 os lb edit 389 shape 0
 os lb edit 389 collide 0
 os lb edit 389 max 16 1 16
@@ -1574,7 +1835,7 @@ os lb edit 389 fallback 44
 os lb remove 390
 os lb copy 30 390
 os blockprops 390 reset
-os lb edit 390 name #Indigo Tile-D
+os lb edit 390 name Indigo Tile-D
 os lb edit 390 shape 0
 os lb edit 390 collide 0
 os lb edit 390 max 16 1 16
@@ -1583,7 +1844,7 @@ os lb edit 390 fallback 44
 os lb remove 391
 os lb copy 31 391
 os blockprops 391 reset
-os lb edit 391 name #Violet Tile-D
+os lb edit 391 name Violet Tile-D
 os lb edit 391 shape 0
 os lb edit 391 collide 0
 os lb edit 391 max 16 1 16
@@ -1592,7 +1853,7 @@ os lb edit 391 fallback 44
 os lb remove 392
 os lb copy 32 392
 os blockprops 392 reset
-os lb edit 392 name #Magenta Tile-D
+os lb edit 392 name Magenta Tile-D
 os lb edit 392 shape 0
 os lb edit 392 collide 0
 os lb edit 392 max 16 1 16
@@ -1601,7 +1862,7 @@ os lb edit 392 fallback 44
 os lb remove 393
 os lb copy 33 393
 os blockprops 393 reset
-os lb edit 393 name #Pink Tile-D
+os lb edit 393 name Pink Tile-D
 os lb edit 393 shape 0
 os lb edit 393 collide 0
 os lb edit 393 max 16 1 16
@@ -1610,7 +1871,7 @@ os lb edit 393 fallback 44
 os lb remove 394
 os lb copy 34 394
 os blockprops 394 reset
-os lb edit 394 name #Black Tile-D
+os lb edit 394 name Black Tile-D
 os lb edit 394 shape 0
 os lb edit 394 collide 0
 os lb edit 394 max 16 1 16
@@ -1619,7 +1880,7 @@ os lb edit 394 fallback 44
 os lb remove 395
 os lb copy 35 395
 os blockprops 395 reset
-os lb edit 395 name #Gray Tile-D
+os lb edit 395 name Gray Tile-D
 os lb edit 395 shape 0
 os lb edit 395 collide 0
 os lb edit 395 max 16 1 16
@@ -1628,7 +1889,7 @@ os lb edit 395 fallback 44
 os lb remove 396
 os lb copy 36 396
 os blockprops 396 reset
-os lb edit 396 name #White Tile-D
+os lb edit 396 name White Tile-D
 os lb edit 396 shape 0
 os lb edit 396 collide 0
 os lb edit 396 max 16 1 16
@@ -1637,7 +1898,7 @@ os lb edit 396 fallback 44
 os lb remove 397
 os lb copy 55 397
 os blockprops 397 reset
-os lb edit 397 name #Light pink Tile-D
+os lb edit 397 name Light pink Tile-D
 os lb edit 397 shape 0
 os lb edit 397 collide 0
 os lb edit 397 max 16 1 16
@@ -1646,7 +1907,7 @@ os lb edit 397 fallback 44
 os lb remove 398
 os lb copy 56 398
 os blockprops 398 reset
-os lb edit 398 name #Forest green Tile-D
+os lb edit 398 name Forest green Tile-D
 os lb edit 398 shape 0
 os lb edit 398 collide 0
 os lb edit 398 max 16 1 16
@@ -1655,7 +1916,7 @@ os lb edit 398 fallback 44
 os lb remove 399
 os lb copy 57 399
 os blockprops 399 reset
-os lb edit 399 name #Brown Tile-D
+os lb edit 399 name Brown Tile-D
 os lb edit 399 shape 0
 os lb edit 399 collide 0
 os lb edit 399 max 16 1 16
@@ -1664,7 +1925,7 @@ os lb edit 399 fallback 44
 os lb remove 400
 os lb copy 58 400
 os blockprops 400 reset
-os lb edit 400 name #Deep blue Tile-D
+os lb edit 400 name Deep blue Tile-D
 os lb edit 400 shape 0
 os lb edit 400 collide 0
 os lb edit 400 max 16 1 16
@@ -1673,336 +1934,12 @@ os lb edit 400 fallback 44
 os lb remove 401
 os lb copy 59 401
 os blockprops 401 reset
-os lb edit 401 name #Turquoise Tile-D
+os lb edit 401 name Turquoise Tile-D
 os lb edit 401 shape 0
 os lb edit 401 collide 0
 os lb edit 401 max 16 1 16
 os blockprops 401 lavakills
 os lb edit 401 fallback 44
-os lb remove 321
-os lb copy 62 321
-os blockprops 321 reset
-os lb edit 321 name Carved Letter A
-os lb edit 321 alltex 37
-os lb edit 321 sidetex 192
-os lb remove 322
-os lb copy 62 322
-os blockprops 322 reset
-os lb edit 322 name Carved Letter B
-os lb edit 322 alltex 37
-os lb edit 322 sidetex 193
-os lb remove 323
-os lb copy 62 323
-os blockprops 323 reset
-os lb edit 323 name Carved Letter C
-os lb edit 323 alltex 37
-os lb edit 323 sidetex 194
-os lb remove 324
-os lb copy 62 324
-os blockprops 324 reset
-os lb edit 324 name Carved Letter D
-os lb edit 324 alltex 37
-os lb edit 324 sidetex 195
-os lb remove 325
-os lb copy 62 325
-os blockprops 325 reset
-os lb edit 325 name Carved Letter E
-os lb edit 325 alltex 37
-os lb edit 325 sidetex 196
-os lb remove 326
-os lb copy 62 326
-os blockprops 326 reset
-os lb edit 326 name Carved Letter F
-os lb edit 326 alltex 37
-os lb edit 326 sidetex 197
-os lb remove 327
-os lb copy 62 327
-os blockprops 327 reset
-os lb edit 327 name Carved Letter G
-os lb edit 327 alltex 37
-os lb edit 327 sidetex 198
-os lb remove 328
-os lb copy 62 328
-os blockprops 328 reset
-os lb edit 328 name Carved Letter H
-os lb edit 328 alltex 37
-os lb edit 328 sidetex 199
-os lb remove 329
-os lb copy 62 329
-os blockprops 329 reset
-os lb edit 329 name Carved Letter I
-os lb edit 329 alltex 37
-os lb edit 329 sidetex 200
-os lb remove 330
-os lb copy 62 330
-os blockprops 330 reset
-os lb edit 330 name Carved Letter J
-os lb edit 330 alltex 37
-os lb edit 330 sidetex 201
-os lb remove 331
-os lb copy 62 331
-os blockprops 331 reset
-os lb edit 331 name Carved Letter K
-os lb edit 331 alltex 37
-os lb edit 331 sidetex 202
-os lb remove 332
-os lb copy 62 332
-os blockprops 332 reset
-os lb edit 332 name Carved Letter L
-os lb edit 332 alltex 37
-os lb edit 332 sidetex 203
-os lb remove 333
-os lb copy 62 333
-os blockprops 333 reset
-os lb edit 333 name Carved Letter M
-os lb edit 333 alltex 37
-os lb edit 333 sidetex 204
-os lb remove 334
-os lb copy 62 334
-os blockprops 334 reset
-os lb edit 334 name Carved Letter N
-os lb edit 334 alltex 37
-os lb edit 334 sidetex 205
-os lb remove 335
-os lb copy 62 335
-os blockprops 335 reset
-os lb edit 335 name Carved Letter O
-os lb edit 335 alltex 37
-os lb edit 335 sidetex 206
-os lb remove 336
-os lb copy 62 336
-os blockprops 336 reset
-os lb edit 336 name Carved Letter P
-os lb edit 336 alltex 37
-os lb edit 336 sidetex 207
-os lb remove 337
-os lb copy 62 337
-os blockprops 337 reset
-os lb edit 337 name Carved Letter Q
-os lb edit 337 alltex 37
-os lb edit 337 sidetex 208
-os lb remove 338
-os lb copy 62 338
-os blockprops 338 reset
-os lb edit 338 name Carved Letter R
-os lb edit 338 alltex 37
-os lb edit 338 sidetex 209
-os lb remove 339
-os lb copy 62 339
-os blockprops 339 reset
-os lb edit 339 name Carved Letter S
-os lb edit 339 alltex 37
-os lb edit 339 sidetex 210
-os lb remove 340
-os lb copy 62 340
-os blockprops 340 reset
-os lb edit 340 name Carved Letter T
-os lb edit 340 alltex 37
-os lb edit 340 sidetex 211
-os lb remove 341
-os lb copy 62 341
-os blockprops 341 reset
-os lb edit 341 name Carved Letter U
-os lb edit 341 alltex 37
-os lb edit 341 sidetex 212
-os lb remove 342
-os lb copy 62 342
-os blockprops 342 reset
-os lb edit 342 name Carved Letter V
-os lb edit 342 alltex 37
-os lb edit 342 sidetex 213
-os lb remove 343
-os lb copy 62 343
-os blockprops 343 reset
-os lb edit 343 name Carved Letter W
-os lb edit 343 alltex 37
-os lb edit 343 sidetex 214
-os lb remove 344
-os lb copy 62 344
-os blockprops 344 reset
-os lb edit 344 name Carved Letter X
-os lb edit 344 alltex 37
-os lb edit 344 sidetex 215
-os lb remove 345
-os lb copy 62 345
-os blockprops 345 reset
-os lb edit 345 name Carved Letter Y
-os lb edit 345 alltex 37
-os lb edit 345 sidetex 216
-os lb remove 346
-os lb copy 62 346
-os blockprops 346 reset
-os lb edit 346 name Carved Letter Z
-os lb edit 346 alltex 37
-os lb edit 346 sidetex 217
-os lb remove 351
-os lb copy 62 351
-os blockprops 351 reset
-os lb edit 351 name Carved Digit 0
-os lb edit 351 alltex 37
-os lb edit 351 sidetex 218
-os lb remove 352
-os lb copy 62 352
-os blockprops 352 reset
-os lb edit 352 name Carved Digit 1
-os lb edit 352 alltex 37
-os lb edit 352 sidetex 219
-os lb remove 353
-os lb copy 62 353
-os blockprops 353 reset
-os lb edit 353 name Carved Digit 2
-os lb edit 353 alltex 37
-os lb edit 353 sidetex 220
-os lb remove 354
-os lb copy 62 354
-os blockprops 354 reset
-os lb edit 354 name Carved Digit 3
-os lb edit 354 alltex 37
-os lb edit 354 sidetex 221
-os lb remove 355
-os lb copy 62 355
-os blockprops 355 reset
-os lb edit 355 name Carved Digit 4
-os lb edit 355 alltex 37
-os lb edit 355 sidetex 222
-os lb remove 356
-os lb copy 62 356
-os blockprops 356 reset
-os lb edit 356 name Carved Digit 5
-os lb edit 356 alltex 37
-os lb edit 356 sidetex 223
-os lb remove 357
-os lb copy 62 357
-os blockprops 357 reset
-os lb edit 357 name Carved Digit 6
-os lb edit 357 alltex 37
-os lb edit 357 sidetex 224
-os lb remove 358
-os lb copy 62 358
-os blockprops 358 reset
-os lb edit 358 name Carved Digit 7
-os lb edit 358 alltex 37
-os lb edit 358 sidetex 225
-os lb remove 359
-os lb copy 62 359
-os blockprops 359 reset
-os lb edit 359 name Carved Digit 8
-os lb edit 359 alltex 37
-os lb edit 359 sidetex 226
-os lb remove 360
-os lb copy 62 360
-os blockprops 360 reset
-os lb edit 360 name Carved Digit 9
-os lb edit 360 alltex 37
-os lb edit 360 sidetex 227
-os lb remove 347
-os lb copy 62 347
-os blockprops 347 reset
-os lb edit 347 name Carved Exclamation
-os lb edit 347 alltex 37
-os lb edit 347 sidetex 228
-os lb remove 348
-os lb copy 62 348
-os blockprops 348 reset
-os lb edit 348 name Carved Full Stop
-os lb edit 348 alltex 37
-os lb edit 348 sidetex 229
-os lb remove 349
-os lb copy 62 349
-os blockprops 349 reset
-os lb edit 349 name Carved Question Mark
-os lb edit 349 alltex 37
-os lb edit 349 sidetex 230
-os lb remove 350
-os lb copy 62 350
-os blockprops 350 reset
-os lb edit 350 name Carved Slash
-os lb edit 350 alltex 37
-os lb edit 350 sidetex 231
-os lb remove 361
-os lb copy 62 361
-os blockprops 361 reset
-os lb edit 361 name Carved Plus
-os lb edit 361 alltex 37
-os lb edit 361 sidetex 232
-os lb remove 362
-os lb copy 62 362
-os blockprops 362 reset
-os lb edit 362 name Carved Minus
-os lb edit 362 alltex 37
-os lb edit 362 sidetex 233
-os lb remove 363
-os lb copy 62 363
-os blockprops 363 reset
-os lb edit 363 name Carved Asterisk
-os lb edit 363 alltex 37
-os lb edit 363 sidetex 234
-os lb remove 364
-os lb copy 62 364
-os blockprops 364 reset
-os lb edit 364 name Carved Hash
-os lb edit 364 alltex 37
-os lb edit 364 sidetex 235
-os lb remove 365
-os lb copy 62 365
-os blockprops 365 reset
-os lb edit 365 name Carved Up Arrow
-os lb edit 365 alltex 37
-os lb edit 365 sidetex 236
-os lb remove 366
-os lb copy 62 366
-os blockprops 366 reset
-os lb edit 366 name Carved Down Arrow
-os lb edit 366 alltex 37
-os lb edit 366 sidetex 237
-os lb remove 367
-os lb copy 62 367
-os blockprops 367 reset
-os lb edit 367 name Carved Left Arrow
-os lb edit 367 alltex 37
-os lb edit 367 sidetex 238
-os lb remove 368
-os lb copy 62 368
-os blockprops 368 reset
-os lb edit 368 name Carved Right Arrow
-os lb edit 368 alltex 37
-os lb edit 368 sidetex 239
-os lb remove 369
-os lb copy 62 369
-os blockprops 369 reset
-os lb edit 369 name Carved Equals
-os lb edit 369 alltex 37
-os lb edit 369 sidetex 240
-os lb remove 370
-os lb copy 62 370
-os blockprops 370 reset
-os lb edit 370 name Carved Underscore
-os lb edit 370 alltex 37
-os lb edit 370 sidetex 241
-os lb remove 371
-os lb copy 62 371
-os blockprops 371 reset
-os lb edit 371 name Carved Arrow-N
-os lb edit 371 alltex 236
-os lb edit 371 sidetex 37
-os lb remove 372
-os lb copy 62 372
-os blockprops 372 reset
-os lb edit 372 name Carved Arrow-S
-os lb edit 372 alltex 237
-os lb edit 372 sidetex 37
-os lb remove 373
-os lb copy 62 373
-os blockprops 373 reset
-os lb edit 373 name Carved Arrow-W
-os lb edit 373 alltex 238
-os lb edit 373 sidetex 37
-os lb remove 374
-os lb copy 62 374
-os blockprops 374 reset
-os lb edit 374 name Carved Arrow-E
-os lb edit 374 alltex 239
-os lb edit 374 sidetex 37
 os lb remove 256
 os lb copy 20 256
 os blockprops 256 reset
@@ -2654,1314 +2591,1530 @@ os lb edit 318 max 16 16 9
 os lb edit 318 min 0 0 7
 os lb edit 318 draw 3
 os lb edit 318 fogcolour #36809e
-os lb remove 752
-os lb copy 0 752
-os blockprops 752 reset
-os lb edit 752 name Paint #000000
-os lb edit 752 alltex 255
-os lb edit 752 collide 2
-os lb edit 752 sound 4
-os lb edit 752 fullbright 1
-os lb edit 752 draw 0
-os lb edit 752 fallback 1
-os lb edit 752 fogcolor #000001
-os lb remove 753
-os lb copy 752 753
-os blockprops 753 reset
-os lb edit 753 name Paint #FFFFFF
-os lb edit 753 fogcolor #FFFFFF
-os lb remove 754
-os lb copy 752 754
-os blockprops 754 reset
-os lb edit 754 name Paint #0000FF
-os lb edit 754 fogcolor #0000FF
-os lb remove 755
-os lb copy 752 755
-os blockprops 755 reset
-os lb edit 755 name Paint #00FFFF
-os lb edit 755 fogcolor #00FFFF
-os lb remove 756
-os lb copy 752 756
-os blockprops 756 reset
-os lb edit 756 name Paint #00FF00
-os lb edit 756 fogcolor #00FF00
-os lb remove 757
-os lb copy 752 757
-os blockprops 757 reset
-os lb edit 757 name Paint #FFFF00
-os lb edit 757 fogcolor #FFFF00
-os lb remove 758
-os lb copy 752 758
-os blockprops 758 reset
-os lb edit 758 name Paint #FF00FF
-os lb edit 758 fogcolor #FF00FF
-os lb remove 759
-os lb copy 752 759
-os blockprops 759 reset
-os lb edit 759 name Paint #FF0000
-os lb edit 759 fogcolor #FF0000
-os lb remove 760
-os lb copy 752 760
-os blockprops 760 reset
-os lb edit 760 name Paint #333333
-os lb edit 760 fogcolor #333333
-os lb remove 761
-os lb copy 752 761
-os blockprops 761 reset
-os lb edit 761 name Paint #666666
-os lb edit 761 fogcolor #666666
-os lb remove 762
-os lb copy 752 762
-os blockprops 762 reset
-os lb edit 762 name Paint #999999
-os lb edit 762 fogcolor #999999
-os lb remove 763
-os lb copy 752 763
-os blockprops 763 reset
-os lb edit 763 name Paint #CCCCCC
-os lb edit 763 fogcolor #CCCCCC
-os lb remove 764
-os lb copy 752 764
-os blockprops 764 reset
-os lb edit 764 name Paint #990000
-os lb edit 764 fogcolor #990000
-os lb remove 765
-os lb copy 752 765
-os blockprops 765 reset
-os lb edit 765 name Paint #008E00
-os lb edit 765 fogcolor #008E00
-os lb remove 766
-os lb copy 752 766
-os blockprops 766 reset
-os lb edit 766 name Paint #0000AA
-os lb edit 766 fogcolor #0000AA
-os lb remove 767
-os lb copy 752 767
-os blockprops 767 reset
-os lb edit 767 name Paint #998E00
-os lb edit 767 fogcolor #998E00
-os lb remove 381
-os lb copy 21 381
-os blockprops 381 reset
-os lb edit 381 name #Red Tile-D
-os lb edit 381 shape 0
-os lb edit 381 collide 0
-os lb edit 381 max 16 1 16
-os blockprops 381 lavakills
-os lb edit 381 fallback 44
+os lb remove 2
+os lb copy 2 2
+os blockprops 2 reset
+os lb edit 2 name Grass
+os lb edit 2 toptex 0
+os lb edit 2 bottomtex 2
+os lb edit 2 sidetex 3
+os lb remove 18
+os lb copy 18 18
+os blockprops 18 reset
+os lb edit 18 name Leaves
+os lb edit 18 name #Leaves
+os lb edit 18 alltex 22
+os blockprops 18 lavakills
+os lb remove 431
+os lb copy 1 431
+os blockprops 431 reset
+os lb edit 431 name White Concrete
+os lb edit 431 alltex 128
+os lb edit 431 fallback 36
+os lb remove 432
+os lb copy 1 432
+os blockprops 432 reset
+os lb edit 432 name Orange Concrete
+os lb edit 432 alltex 129
+os lb edit 432 fallback 22
+os lb remove 433
+os lb copy 1 433
+os blockprops 433 reset
+os lb edit 433 name Magenta Concrete
+os lb edit 433 alltex 130
+os lb edit 433 fallback 32
+os lb remove 434
+os lb copy 1 434
+os blockprops 434 reset
+os lb edit 434 name Light Blue Concrete
+os lb edit 434 alltex 131
+os lb edit 434 fallback 29
+os lb remove 435
+os lb copy 1 435
+os blockprops 435 reset
+os lb edit 435 name Yellow Concrete
+os lb edit 435 alltex 132
+os lb edit 435 fallback 23
+os lb remove 436
+os lb copy 1 436
+os blockprops 436 reset
+os lb edit 436 name Lime Concrete
+os lb edit 436 alltex 133
+os lb edit 436 fallback 24
+os lb remove 437
+os lb copy 1 437
+os blockprops 437 reset
+os lb edit 437 name Pink Concrete
+os lb edit 437 alltex 134
+os lb edit 437 fallback 33
+os lb remove 438
+os lb copy 1 438
+os blockprops 438 reset
+os lb edit 438 name Gray Concrete
+os lb edit 438 alltex 135
+os lb edit 438 fallback 35
+os lb remove 439
+os lb copy 1 439
+os blockprops 439 reset
+os lb edit 439 name Light Gray Concrete
+os lb edit 439 alltex 136
+os lb edit 439 fallback 35
+os lb remove 440
+os lb copy 1 440
+os blockprops 440 reset
+os lb edit 440 name Cyan Concrete
+os lb edit 440 alltex 137
+os lb edit 440 fallback 28
+os lb remove 441
+os lb copy 1 441
+os blockprops 441 reset
+os lb edit 441 name Purple Concrete
+os lb edit 441 alltex 138
+os lb edit 441 fallback 31
+os lb remove 442
+os lb copy 1 442
+os blockprops 442 reset
+os lb edit 442 name Blue Concrete
+os lb edit 442 alltex 139
+os lb edit 442 fallback 29
+os lb remove 443
+os lb copy 1 443
+os blockprops 443 reset
+os lb edit 443 name Brown Concrete
+os lb edit 443 alltex 140
+os lb edit 443 fallback 3
+os lb remove 444
+os lb copy 1 444
+os blockprops 444 reset
+os lb edit 444 name Green Concrete
+os lb edit 444 alltex 141
+os lb edit 444 fallback 25
+os lb remove 445
+os lb copy 1 445
+os blockprops 445 reset
+os lb edit 445 name Red Concrete
+os lb edit 445 alltex 142
+os lb edit 445 fallback 21
+os lb remove 446
+os lb copy 1 446
+os blockprops 446 reset
+os lb edit 446 name Black Concrete
+os lb edit 446 alltex 143
+os lb edit 446 fallback 34
+os lb remove 75
+os lb copy 20 75
+os blockprops 75 reset
+os lb edit 75 name Nether Portal
+os lb edit 75 alltex 92
+os lb edit 75 collide 0
+os lb edit 75 draw 3
+os blockprops 75 portal 1
+os lb remove 447
+os lb copy 5 447
+os blockprops 447 reset
+os lb edit 447 name Acacia Planks
+os lb edit 447 alltex 288
+os blockprops 447 lavakills
+os lb remove 448
+os lb copy 5 448
+os blockprops 448 reset
+os lb edit 448 name Birch Planks
+os lb edit 448 alltex 289
+os blockprops 448 lavakills
+os lb remove 449
+os lb copy 5 449
+os blockprops 449 reset
+os lb edit 449 name Dark Oak Planks
+os lb edit 449 alltex 290
+os blockprops 449 lavakills
+os lb remove 450
+os lb copy 5 450
+os blockprops 450 reset
+os lb edit 450 name Jungle Planks
+os lb edit 450 alltex 291
+os blockprops 450 lavakills
+os lb remove 451
+os lb copy 5 451
+os blockprops 451 reset
+os lb edit 451 name Spruce Planks
+os lb edit 451 alltex 292
+os blockprops 451 lavakills
+os lb remove 452
+os lb copy 5 452
+os blockprops 452 reset
+os lb edit 452 name Acacia Log
+os lb edit 452 alltex 293
+os lb edit 452 sidetex 294
+os blockprops 452 lavakills
+os lb remove 453
+os lb copy 5 453
+os blockprops 453 reset
+os lb edit 453 name Birch Log
+os lb edit 453 alltex 295
+os lb edit 453 sidetex 296
+os blockprops 453 lavakills
+os lb remove 454
+os lb copy 5 454
+os blockprops 454 reset
+os lb edit 454 name Dark Oak Log
+os lb edit 454 alltex 297
+os lb edit 454 sidetex 298
+os blockprops 454 lavakills
+os lb remove 455
+os lb copy 5 455
+os blockprops 455 reset
+os lb edit 455 name Jungle Log
+os lb edit 455 alltex 299
+os lb edit 455 sidetex 300
+os blockprops 455 lavakills
+os lb remove 456
+os lb copy 5 456
+os blockprops 456 reset
+os lb edit 456 name Spruce Log
+os lb edit 456 alltex 301
+os lb edit 456 sidetex 302
+os blockprops 456 lavakills
+os lb remove 457
+os lb copy 18 457
+os blockprops 457 reset
+os lb edit 457 name #Acacia Leaves
+os lb edit 457 alltex 303
+os blockprops 457 lavakills
 os lb remove 458
-os lb copy 21 458
+os lb copy 18 458
 os blockprops 458 reset
-os lb edit 458 name #Red Tile-U
-os lb edit 458 shape 0
-os lb edit 458 collide 0
-os lb edit 458 min 0 15 0
+os lb edit 458 name Birch Leaves
+os lb edit 458 alltex 304
 os blockprops 458 lavakills
-os lb edit 458 fallback 0
 os lb remove 459
-os lb copy 21 459
+os lb copy 18 459
 os blockprops 459 reset
-os lb edit 459 name #Red Tile-N
-os lb edit 459 shape 0
-os lb edit 459 collide 0
-os lb edit 459 max 16 16 1
-os lb edit 459 blockslight no
+os lb edit 459 name #Dark Oak Leaves
+os lb edit 459 alltex 305
 os blockprops 459 lavakills
-os lb edit 459 fallback 0
 os lb remove 460
-os lb copy 21 460
+os lb copy 18 460
 os blockprops 460 reset
-os lb edit 460 name #Red Tile-S
-os lb edit 460 shape 0
-os lb edit 460 collide 0
-os lb edit 460 min 0 0 15
-os lb edit 460 blockslight no
+os lb edit 460 name #Jungle Leaves
+os lb edit 460 alltex 306
 os blockprops 460 lavakills
-os lb edit 460 fallback 0
 os lb remove 461
-os lb copy 21 461
+os lb copy 18 461
 os blockprops 461 reset
-os lb edit 461 name #Red Tile-W
-os lb edit 461 shape 0
-os lb edit 461 collide 0
-os lb edit 461 max 1 16 16
-os lb edit 461 blockslight no
+os lb edit 461 name Spruce Leaves
+os lb edit 461 alltex 307
 os blockprops 461 lavakills
-os lb edit 461 fallback 0
 os lb remove 462
-os lb copy 21 462
+os lb copy 39 462
 os blockprops 462 reset
-os lb edit 462 name #Red Tile-E
-os lb edit 462 shape 0
-os lb edit 462 collide 0
-os lb edit 462 min 15 0 0
-os lb edit 462 blockslight no
+os lb edit 462 name Acacia Sapling
+os lb edit 462 alltex 308
+os lb edit 462 sound 3
+os blockprops 462 waterkills
 os blockprops 462 lavakills
-os lb edit 462 fallback 0
-os lb remove 382
-os lb copy 22 382
-os blockprops 382 reset
-os lb edit 382 name #Orange Tile-D
-os lb edit 382 shape 0
-os lb edit 382 collide 0
-os lb edit 382 max 16 1 16
-os blockprops 382 lavakills
-os lb edit 382 fallback 44
 os lb remove 463
-os lb copy 22 463
+os lb copy 39 463
 os blockprops 463 reset
-os lb edit 463 name #Orange Tile-U
-os lb edit 463 shape 0
-os lb edit 463 collide 0
-os lb edit 463 min 0 15 0
+os lb edit 463 name Birch Sapling
+os lb edit 463 alltex 309
+os lb edit 463 sound 3
+os blockprops 463 waterkills
 os blockprops 463 lavakills
-os lb edit 463 fallback 0
 os lb remove 464
-os lb copy 22 464
+os lb copy 39 464
 os blockprops 464 reset
-os lb edit 464 name #Orange Tile-N
-os lb edit 464 shape 0
-os lb edit 464 collide 0
-os lb edit 464 max 16 16 1
-os lb edit 464 blockslight no
+os lb edit 464 name Dark Oak Sapling
+os lb edit 464 alltex 310
+os lb edit 464 sound 3
+os blockprops 464 waterkills
 os blockprops 464 lavakills
-os lb edit 464 fallback 0
 os lb remove 465
-os lb copy 22 465
+os lb copy 39 465
 os blockprops 465 reset
-os lb edit 465 name #Orange Tile-S
-os lb edit 465 shape 0
-os lb edit 465 collide 0
-os lb edit 465 min 0 0 15
-os lb edit 465 blockslight no
+os lb edit 465 name Jungle Sapling
+os lb edit 465 alltex 311
+os lb edit 465 sound 3
+os blockprops 465 waterkills
 os blockprops 465 lavakills
-os lb edit 465 fallback 0
 os lb remove 466
-os lb copy 22 466
+os lb copy 39 466
 os blockprops 466 reset
-os lb edit 466 name #Orange Tile-W
-os lb edit 466 shape 0
-os lb edit 466 collide 0
-os lb edit 466 max 1 16 16
-os lb edit 466 blockslight no
+os lb edit 466 name Spruce Sapling
+os lb edit 466 alltex 312
+os lb edit 466 sound 3
+os blockprops 466 waterkills
 os blockprops 466 lavakills
-os lb edit 466 fallback 0
 os lb remove 467
-os lb copy 22 467
+os lb copy 37 467
 os blockprops 467 reset
-os lb edit 467 name #Orange Tile-E
-os lb edit 467 shape 0
-os lb edit 467 collide 0
-os lb edit 467 min 15 0 0
-os lb edit 467 blockslight no
+os lb edit 467 name Allium
+os lb edit 467 alltex 313
+os lb edit 467 sound 3
+os blockprops 467 waterkills
 os blockprops 467 lavakills
-os lb edit 467 fallback 0
-os lb remove 383
-os lb copy 23 383
-os blockprops 383 reset
-os lb edit 383 name #Yellow Tile-D
-os lb edit 383 shape 0
-os lb edit 383 collide 0
-os lb edit 383 max 16 1 16
-os blockprops 383 lavakills
-os lb edit 383 fallback 44
 os lb remove 468
-os lb copy 23 468
+os lb copy 37 468
 os blockprops 468 reset
-os lb edit 468 name #Yellow Tile-U
-os lb edit 468 shape 0
-os lb edit 468 collide 0
-os lb edit 468 min 0 15 0
+os lb edit 468 name Azure Bluet
+os lb edit 468 alltex 314
+os lb edit 468 sound 3
+os blockprops 468 waterkills
 os blockprops 468 lavakills
-os lb edit 468 fallback 0
 os lb remove 469
-os lb copy 23 469
+os lb copy 37 469
 os blockprops 469 reset
-os lb edit 469 name #Yellow Tile-N
-os lb edit 469 shape 0
-os lb edit 469 collide 0
-os lb edit 469 max 16 16 1
-os lb edit 469 blockslight no
+os lb edit 469 name Lilac Bottom
+os lb edit 469 alltex 282
+os lb edit 469 sound 3
+os blockprops 469 waterkills
 os blockprops 469 lavakills
-os lb edit 469 fallback 0
 os lb remove 470
-os lb copy 23 470
+os lb copy 37 470
 os blockprops 470 reset
-os lb edit 470 name #Yellow Tile-S
-os lb edit 470 shape 0
-os lb edit 470 collide 0
-os lb edit 470 min 0 0 15
-os lb edit 470 blockslight no
+os lb edit 470 name Lilac Top
+os lb edit 470 alltex 266
+os lb edit 470 sound 3
+os blockprops 470 waterkills
 os blockprops 470 lavakills
-os lb edit 470 fallback 0
 os lb remove 471
-os lb copy 23 471
+os lb copy 37 471
 os blockprops 471 reset
-os lb edit 471 name #Yellow Tile-W
-os lb edit 471 shape 0
-os lb edit 471 collide 0
-os lb edit 471 max 1 16 16
-os lb edit 471 blockslight no
+os lb edit 471 name Blue Orchid
+os lb edit 471 alltex 315
+os lb edit 471 sound 3
+os blockprops 471 waterkills
 os blockprops 471 lavakills
-os lb edit 471 fallback 0
 os lb remove 472
-os lb copy 23 472
+os lb copy 37 472
 os blockprops 472 reset
-os lb edit 472 name #Yellow Tile-E
-os lb edit 472 shape 0
-os lb edit 472 collide 0
-os lb edit 472 min 15 0 0
-os lb edit 472 blockslight no
+os lb edit 472 name Oxeye Daisy
+os lb edit 472 alltex 316
+os lb edit 472 sound 3
+os blockprops 472 waterkills
 os blockprops 472 lavakills
-os lb edit 472 fallback 0
-os lb remove 384
-os lb copy 24 384
-os blockprops 384 reset
-os lb edit 384 name #Lime Tile-D
-os lb edit 384 shape 0
-os lb edit 384 collide 0
-os lb edit 384 max 16 1 16
-os blockprops 384 lavakills
-os lb edit 384 fallback 44
 os lb remove 473
-os lb copy 24 473
+os lb copy 37 473
 os blockprops 473 reset
-os lb edit 473 name #Lime Tile-U
-os lb edit 473 shape 0
-os lb edit 473 collide 0
-os lb edit 473 min 0 15 0
+os lb edit 473 name Peony Bottom
+os lb edit 473 alltex 283
+os lb edit 473 sound 3
+os blockprops 473 waterkills
 os blockprops 473 lavakills
-os lb edit 473 fallback 0
 os lb remove 474
-os lb copy 24 474
+os lb copy 37 474
 os blockprops 474 reset
-os lb edit 474 name #Lime Tile-N
-os lb edit 474 shape 0
-os lb edit 474 collide 0
-os lb edit 474 max 16 16 1
-os lb edit 474 blockslight no
+os lb edit 474 name Peony Top
+os lb edit 474 alltex 267
+os lb edit 474 sound 3
+os blockprops 474 waterkills
 os blockprops 474 lavakills
-os lb edit 474 fallback 0
 os lb remove 475
-os lb copy 24 475
+os lb copy 37 475
 os blockprops 475 reset
-os lb edit 475 name #Lime Tile-S
-os lb edit 475 shape 0
-os lb edit 475 collide 0
-os lb edit 475 min 0 0 15
-os lb edit 475 blockslight no
+os lb edit 475 name Rose Bush Bottom
+os lb edit 475 alltex 284
+os lb edit 475 sound 3
+os blockprops 475 waterkills
 os blockprops 475 lavakills
-os lb edit 475 fallback 0
 os lb remove 476
-os lb copy 24 476
+os lb copy 37 476
 os blockprops 476 reset
-os lb edit 476 name #Lime Tile-W
-os lb edit 476 shape 0
-os lb edit 476 collide 0
-os lb edit 476 max 1 16 16
-os lb edit 476 blockslight no
+os lb edit 476 name Rose Bush Top
+os lb edit 476 alltex 268
+os lb edit 476 sound 3
+os blockprops 476 waterkills
 os blockprops 476 lavakills
-os lb edit 476 fallback 0
 os lb remove 477
-os lb copy 24 477
+os lb copy 37 477
 os blockprops 477 reset
-os lb edit 477 name #Lime Tile-E
-os lb edit 477 shape 0
-os lb edit 477 collide 0
-os lb edit 477 min 15 0 0
-os lb edit 477 blockslight no
+os lb edit 477 name White Tulip
+os lb edit 477 alltex 317
+os lb edit 477 sound 3
+os blockprops 477 waterkills
 os blockprops 477 lavakills
-os lb edit 477 fallback 0
-os lb remove 385
-os lb copy 25 385
-os blockprops 385 reset
-os lb edit 385 name #Green Tile-D
-os lb edit 385 shape 0
-os lb edit 385 collide 0
-os lb edit 385 max 16 1 16
-os blockprops 385 lavakills
-os lb edit 385 fallback 44
 os lb remove 478
-os lb copy 25 478
+os lb copy 37 478
 os blockprops 478 reset
-os lb edit 478 name #Green Tile-U
-os lb edit 478 shape 0
-os lb edit 478 collide 0
-os lb edit 478 min 0 15 0
+os lb edit 478 name Orange Tulip
+os lb edit 478 alltex 318
+os lb edit 478 sound 3
+os blockprops 478 waterkills
 os blockprops 478 lavakills
-os lb edit 478 fallback 0
 os lb remove 479
-os lb copy 25 479
+os lb copy 37 479
 os blockprops 479 reset
-os lb edit 479 name #Green Tile-N
-os lb edit 479 shape 0
-os lb edit 479 collide 0
-os lb edit 479 max 16 16 1
-os lb edit 479 blockslight no
+os lb edit 479 name Pink Tulip
+os lb edit 479 alltex 319
+os lb edit 479 sound 3
+os blockprops 479 waterkills
 os blockprops 479 lavakills
-os lb edit 479 fallback 0
 os lb remove 480
-os lb copy 25 480
+os lb copy 37 480
 os blockprops 480 reset
-os lb edit 480 name #Green Tile-S
-os lb edit 480 shape 0
-os lb edit 480 collide 0
-os lb edit 480 min 0 0 15
-os lb edit 480 blockslight no
+os lb edit 480 name Red Tulip
+os lb edit 480 alltex 320
+os lb edit 480 sound 3
+os blockprops 480 waterkills
 os blockprops 480 lavakills
-os lb edit 480 fallback 0
+os lb remove 86
+os lb copy 39 86
+os blockprops 86 reset
+os lb edit 86 name #Sugar Cane
+os lb edit 86 alltex 93
+os lb edit 86 sound 3
+os lb edit 86 draw 6
+os blockprops 86 lavakills
 os lb remove 481
-os lb copy 25 481
+os lb copy 39 481
 os blockprops 481 reset
-os lb edit 481 name #Green Tile-W
-os lb edit 481 shape 0
-os lb edit 481 collide 0
-os lb edit 481 max 1 16 16
-os lb edit 481 blockslight no
+os lb edit 481 name Beetroots
+os lb edit 481 alltex 321
+os lb edit 481 sound 3
+os blockprops 481 waterkills
 os blockprops 481 lavakills
-os lb edit 481 fallback 0
 os lb remove 482
-os lb copy 25 482
+os lb copy 5 482
 os blockprops 482 reset
-os lb edit 482 name #Green Tile-E
-os lb edit 482 shape 0
-os lb edit 482 collide 0
-os lb edit 482 min 15 0 0
-os lb edit 482 blockslight no
+os lb edit 482 name Cactus
+os lb edit 482 toptex 322
+os lb edit 482 bottomtex 323
+os lb edit 482 sidetex 324
+os lb edit 482 max 15 16 15
+os lb edit 482 min 1 0 1
+os lb edit 482 blockslight 0
 os blockprops 482 lavakills
-os lb edit 482 fallback 0
-os lb remove 386
-os lb copy 26 386
-os blockprops 386 reset
-os lb edit 386 name #Teal Tile-D
-os lb edit 386 shape 0
-os lb edit 386 collide 0
-os lb edit 386 max 16 1 16
-os blockprops 386 lavakills
-os lb edit 386 fallback 44
 os lb remove 483
-os lb copy 26 483
+os lb copy 39 483
 os blockprops 483 reset
-os lb edit 483 name #Teal Tile-U
-os lb edit 483 shape 0
-os lb edit 483 collide 0
-os lb edit 483 min 0 15 0
+os lb edit 483 name Carrots
+os lb edit 483 alltex 325
+os lb edit 483 sound 3
+os blockprops 483 waterkills
 os blockprops 483 lavakills
-os lb edit 483 fallback 0
 os lb remove 484
-os lb copy 26 484
+os lb copy 39 484
 os blockprops 484 reset
-os lb edit 484 name #Teal Tile-N
-os lb edit 484 shape 0
-os lb edit 484 collide 0
-os lb edit 484 max 16 16 1
-os lb edit 484 blockslight no
+os lb edit 484 name Dead Bush
+os lb edit 484 alltex 326
+os lb edit 484 sound 3
+os blockprops 484 waterkills
 os blockprops 484 lavakills
-os lb edit 484 fallback 0
+os lb remove 94
+os lb copy 39 94
+os blockprops 94 reset
+os lb edit 94 name #Fern
+os lb edit 94 alltex 108
+os lb edit 94 sound 3
+os blockprops 94 waterkills
+os blockprops 94 lavakills
+os lb remove 83
+os lb copy 39 83
+os blockprops 83 reset
+os lb edit 83 name #Tall Grass
+os lb edit 83 alltex 89
+os lb edit 83 sound 3
+os lb edit 83 draw 6
+os blockprops 83 waterkills
+os blockprops 83 lavakills
+os lb remove 85
+os lb copy 39 85
+os blockprops 85 reset
+os lb edit 85 name #Tall Grass Bottom
+os lb edit 85 alltex 91
+os lb edit 85 sound 3
+os lb edit 85 draw 7
+os blockprops 85 waterkills
+os blockprops 85 lavakills
+os lb remove 84
+os lb copy 39 84
+os blockprops 84 reset
+os lb edit 84 name #Tall Grass Top
+os lb edit 84 alltex 90
+os lb edit 84 sound 3
+os lb edit 84 draw 7
+os blockprops 84 waterkills
+os blockprops 84 lavakills
 os lb remove 485
-os lb copy 26 485
+os lb copy 39 485
 os blockprops 485 reset
-os lb edit 485 name #Teal Tile-S
-os lb edit 485 shape 0
-os lb edit 485 collide 0
-os lb edit 485 min 0 0 15
-os lb edit 485 blockslight no
+os lb edit 485 name #Large Fern Bottom
+os lb edit 485 alltex 281
+os lb edit 485 sound 3
+os blockprops 485 waterkills
 os blockprops 485 lavakills
-os lb edit 485 fallback 0
 os lb remove 486
-os lb copy 26 486
+os lb copy 39 486
 os blockprops 486 reset
-os lb edit 486 name #Teal Tile-W
-os lb edit 486 shape 0
-os lb edit 486 collide 0
-os lb edit 486 max 1 16 16
-os lb edit 486 blockslight no
+os lb edit 486 name #Large Fern Top
+os lb edit 486 alltex 265
+os lb edit 486 sound 3
+os blockprops 486 waterkills
 os blockprops 486 lavakills
-os lb edit 486 fallback 0
 os lb remove 487
-os lb copy 26 487
+os lb copy 39 487
 os blockprops 487 reset
-os lb edit 487 name #Teal Tile-E
-os lb edit 487 shape 0
-os lb edit 487 collide 0
-os lb edit 487 min 15 0 0
-os lb edit 487 blockslight no
+os lb edit 487 name Nether Wart
+os lb edit 487 alltex 327
+os lb edit 487 sound 3
+os blockprops 487 waterkills
 os blockprops 487 lavakills
-os lb edit 487 fallback 0
-os lb remove 387
-os lb copy 27 387
-os blockprops 387 reset
-os lb edit 387 name #Aqua Tile-D
-os lb edit 387 shape 0
-os lb edit 387 collide 0
-os lb edit 387 max 16 1 16
-os blockprops 387 lavakills
-os lb edit 387 fallback 44
 os lb remove 488
-os lb copy 27 488
+os lb copy 39 488
 os blockprops 488 reset
-os lb edit 488 name #Aqua Tile-U
-os lb edit 488 shape 0
-os lb edit 488 collide 0
-os lb edit 488 min 0 15 0
+os lb edit 488 name Potatoes
+os lb edit 488 alltex 328
+os lb edit 488 sound 3
+os blockprops 488 waterkills
 os blockprops 488 lavakills
-os lb edit 488 fallback 0
 os lb remove 489
-os lb copy 27 489
+os lb copy 39 489
 os blockprops 489 reset
-os lb edit 489 name #Aqua Tile-N
-os lb edit 489 shape 0
-os lb edit 489 collide 0
-os lb edit 489 max 16 16 1
-os lb edit 489 blockslight no
+os lb edit 489 name Wheat
+os lb edit 489 alltex 329
+os lb edit 489 sound 3
+os blockprops 489 waterkills
 os blockprops 489 lavakills
-os lb edit 489 fallback 0
 os lb remove 490
-os lb copy 27 490
+os lb copy 37 490
 os blockprops 490 reset
-os lb edit 490 name #Aqua Tile-S
-os lb edit 490 shape 0
-os lb edit 490 collide 0
-os lb edit 490 min 0 0 15
-os lb edit 490 blockslight no
+os lb edit 490 name Flower Paeonia
+os lb edit 490 alltex 144
+os lb edit 490 sound 3
+os blockprops 490 waterkills
 os blockprops 490 lavakills
-os lb edit 490 fallback 0
 os lb remove 491
-os lb copy 27 491
+os lb copy 39 491
 os blockprops 491 reset
-os lb edit 491 name #Aqua Tile-W
-os lb edit 491 shape 0
-os lb edit 491 collide 0
-os lb edit 491 max 1 16 16
-os lb edit 491 blockslight no
-os blockprops 491 lavakills
-os lb edit 491 fallback 0
+os lb edit 491 name Apple
+os lb edit 491 alltex 145
+os lb edit 491 sound 1
+os lb remove 111
+os lb copy 20 111
+os blockprops 111 reset
+os lb edit 111 name Barrier
+os lb edit 111 alltex 118
+os lb edit 111 draw 4
+os lb remove 112
+os lb copy 20 112
+os blockprops 112 reset
+os lb edit 112 name Barrier Visible
+os lb edit 112 alltex 118
 os lb remove 492
-os lb copy 27 492
+os lb copy 42 492
 os blockprops 492 reset
-os lb edit 492 name #Aqua Tile-E
-os lb edit 492 shape 0
-os lb edit 492 collide 0
-os lb edit 492 min 15 0 0
-os lb edit 492 blockslight no
-os blockprops 492 lavakills
-os lb edit 492 fallback 0
-os lb remove 388
-os lb copy 28 388
-os blockprops 388 reset
-os lb edit 388 name #Cyan Tile-D
-os lb edit 388 shape 0
-os lb edit 388 collide 0
-os lb edit 388 max 16 1 16
-os blockprops 388 lavakills
-os lb edit 388 fallback 44
+os lb edit 492 name Iron Bars-NS
+os lb edit 492 alltex 146
+os lb edit 492 draw 2
+os lb edit 492 blockslight 0
+os lb edit 492 max 9 16 16
+os lb edit 492 min 7 0 0
 os lb remove 493
-os lb copy 28 493
+os lb copy 42 493
 os blockprops 493 reset
-os lb edit 493 name #Cyan Tile-U
-os lb edit 493 shape 0
-os lb edit 493 collide 0
-os lb edit 493 min 0 15 0
-os blockprops 493 lavakills
-os lb edit 493 fallback 0
+os lb edit 493 name Iron Bars-WE
+os lb edit 493 alltex 146
+os lb edit 493 draw 2
+os lb edit 493 blockslight 0
+os lb edit 493 max 16 16 9
+os lb edit 493 min 0 0 7
+os lb remove 96
+os lb copy 62 96
+os blockprops 96 reset
+os lb edit 96 name Beacon
+os lb edit 96 fullbright 1
+os lb edit 96 alltex 112
+os lb edit 96 sidetex 110
+os lb edit 96 max 13 -19 13
+os lb edit 96 min 3 -29 3
+os lb edit 96 draw 2
+os lb edit 96 blockslight 0
+os lb edit 96 fallback 0
+os lb remove 97
+os lb copy 1 97
+os blockprops 97 reset
+os lb edit 97 name Beacon Base
+os lb edit 97 alltex 37
+os lb edit 97 max 14 -13 14
+os lb edit 97 min 2 -16 2
+os lb edit 97 sidetex 36
+os lb edit 97 draw 2
+os lb edit 97 blockslight 0
+os lb edit 97 fallback 0
 os lb remove 494
-os lb copy 28 494
+os lb copy 62 494
 os blockprops 494 reset
-os lb edit 494 name #Cyan Tile-N
-os lb edit 494 shape 0
-os lb edit 494 collide 0
-os lb edit 494 max 16 16 1
-os lb edit 494 blockslight no
-os blockprops 494 lavakills
+os lb edit 494 name Blinking Beacon
+os lb edit 494 fullbright 1
+os lb edit 494 alltex 147
+os lb edit 494 sidetex 145
+os lb edit 494 max 13 -19 13
+os lb edit 494 min 3 -29 3
+os lb edit 494 draw 2
+os lb edit 494 blockslight 0
 os lb edit 494 fallback 0
+os lb remove 97
+os lb copy 1 97
+os blockprops 97 reset
+os lb edit 97 name Beacon Base
+os lb edit 97 alltex 37
+os lb edit 97 max 14 -13 14
+os lb edit 97 min 2 -16 2
+os lb edit 97 sidetex 36
+os lb edit 97 draw 2
+os lb edit 97 blockslight 0
+os lb edit 97 fallback 0
 os lb remove 495
-os lb copy 28 495
+os lb copy 39 495
 os blockprops 495 reset
-os lb edit 495 name #Cyan Tile-S
-os lb edit 495 shape 0
-os lb edit 495 collide 0
-os lb edit 495 min 0 0 15
-os lb edit 495 blockslight no
-os blockprops 495 lavakills
-os lb edit 495 fallback 0
+os lb edit 495 name Blinking Torch
+os lb edit 495 fullbright 1
+os lb edit 495 alltex 148
 os lb remove 496
-os lb copy 28 496
+os lb copy 1 496
 os blockprops 496 reset
-os lb edit 496 name #Cyan Tile-W
-os lb edit 496 shape 0
-os lb edit 496 collide 0
-os lb edit 496 max 1 16 16
-os lb edit 496 blockslight no
-os blockprops 496 lavakills
-os lb edit 496 fallback 0
+os lb edit 496 name Bone Block
+os lb edit 496 alltex 149
+os lb edit 496 sidetex 150
 os lb remove 497
-os lb copy 28 497
+os lb copy 39 497
 os blockprops 497 reset
-os lb edit 497 name #Cyan Tile-E
-os lb edit 497 shape 0
-os lb edit 497 collide 0
-os lb edit 497 min 15 0 0
-os lb edit 497 blockslight no
-os blockprops 497 lavakills
-os lb edit 497 fallback 0
-os lb remove 389
-os lb copy 29 389
-os blockprops 389 reset
-os lb edit 389 name #Blue Tile-D
-os lb edit 389 shape 0
-os lb edit 389 collide 0
-os lb edit 389 max 16 1 16
-os blockprops 389 lavakills
-os lb edit 389 fallback 44
+os lb edit 497 name Brewing Stand
+os lb edit 497 alltex 151
+os lb edit 497 sound 5
+os lb remove 95
+os lb copy 36 95
+os blockprops 95 reset
+os lb edit 95 name Cake
+os lb edit 95 toptex 109
+os lb edit 95 bottomtex 110
+os lb edit 95 sidetex 111
+os lb edit 95 draw 2
+os lb edit 95 max 15 8 15
+os lb edit 95 min 1 0 1
+os blockprops 95 waterkills
+os blockprops 95 lavakills
 os lb remove 498
-os lb copy 29 498
+os lb copy 1 498
 os blockprops 498 reset
-os lb edit 498 name #Blue Tile-U
-os lb edit 498 shape 0
-os lb edit 498 collide 0
-os lb edit 498 min 0 15 0
-os blockprops 498 lavakills
-os lb edit 498 fallback 0
+os lb edit 498 name Clay
+os lb edit 498 alltex 152
 os lb remove 499
-os lb copy 29 499
+os lb copy 1 499
 os blockprops 499 reset
-os lb edit 499 name #Blue Tile-N
-os lb edit 499 shape 0
-os lb edit 499 collide 0
-os lb edit 499 max 16 16 1
-os lb edit 499 blockslight no
-os blockprops 499 lavakills
-os lb edit 499 fallback 0
+os lb edit 499 name Coal Block
+os lb edit 499 alltex 153
 os lb remove 500
-os lb copy 29 500
+os lb copy 3 500
 os blockprops 500 reset
-os lb edit 500 name #Blue Tile-S
-os lb edit 500 shape 0
-os lb edit 500 collide 0
-os lb edit 500 min 0 0 15
-os lb edit 500 blockslight no
-os blockprops 500 lavakills
-os lb edit 500 fallback 0
+os lb edit 500 name Coarse Dirt
+os lb edit 500 alltex 154
+os lb remove 74
+os lb copy 39 74
+os blockprops 74 reset
+os lb edit 74 name Cobweb
+os lb edit 74 alltex 44
+os lb edit 74 sound 1
 os lb remove 501
-os lb copy 29 501
+os lb copy 1 501
 os blockprops 501 reset
-os lb edit 501 name #Blue Tile-W
-os lb edit 501 shape 0
-os lb edit 501 collide 0
-os lb edit 501 max 1 16 16
-os lb edit 501 blockslight no
-os blockprops 501 lavakills
-os lb edit 501 fallback 0
+os lb edit 501 name Cracked Stone Bricks
+os lb edit 501 alltex 155
 os lb remove 502
-os lb copy 29 502
+os lb copy 5 502
 os blockprops 502 reset
-os lb edit 502 name #Blue Tile-E
-os lb edit 502 shape 0
-os lb edit 502 collide 0
-os lb edit 502 min 15 0 0
-os lb edit 502 blockslight no
+os lb edit 502 name Crafting Table
+os lb edit 502 toptex 156
+os lb edit 502 bottomtex 4
+os lb edit 502 lefttex 157
+os lb edit 502 righttex 157
+os lb edit 502 fronttex 158
+os lb edit 502 backtex 158
 os blockprops 502 lavakills
-os lb edit 502 fallback 0
-os lb remove 390
-os lb copy 30 390
-os blockprops 390 reset
-os lb edit 390 name #Indigo Tile-D
-os lb edit 390 shape 0
-os lb edit 390 collide 0
-os lb edit 390 max 16 1 16
-os blockprops 390 lavakills
-os lb edit 390 fallback 44
 os lb remove 503
-os lb copy 30 503
+os lb copy 1 503
 os blockprops 503 reset
-os lb edit 503 name #Indigo Tile-U
-os lb edit 503 shape 0
-os lb edit 503 collide 0
-os lb edit 503 min 0 15 0
-os blockprops 503 lavakills
-os lb edit 503 fallback 0
+os lb edit 503 name Daylight Detector
+os lb edit 503 alltex 159
+os lb edit 503 sidetex 160
+os lb edit 503 max 16 6 16
+os lb remove 67
+os lb copy 1 67
+os blockprops 67 reset
+os lb edit 67 name Diamond Block
+os lb edit 67 alltex 161
+os lb remove 68
+os lb copy 1 68
+os blockprops 68 reset
+os lb edit 68 name Diamond Ore
+os lb edit 68 alltex 60
 os lb remove 504
-os lb copy 30 504
+os lb copy 39 504
 os blockprops 504 reset
-os lb edit 504 name #Indigo Tile-N
-os lb edit 504 shape 0
-os lb edit 504 collide 0
-os lb edit 504 max 16 16 1
-os lb edit 504 blockslight no
-os blockprops 504 lavakills
-os lb edit 504 fallback 0
+os lb edit 504 name Diamond
+os lb edit 504 alltex 162
+os lb edit 504 sound 4
 os lb remove 505
-os lb copy 30 505
+os lb copy 5 505
 os blockprops 505 reset
-os lb edit 505 name #Indigo Tile-S
-os lb edit 505 shape 0
-os lb edit 505 collide 0
-os lb edit 505 min 0 0 15
-os lb edit 505 blockslight no
+os lb edit 505 name Acacia Door-NS
+os lb edit 505 alltex 288
+os lb edit 505 lefttex 256
+os lb edit 505 righttex 256
+os lb edit 505 max 9 16 16
+os lb edit 505 min 7 0 0
+os lb edit 505 draw 2
+os lb edit 505 blockslight 0
+os blockprops 505 door
 os blockprops 505 lavakills
-os lb edit 505 fallback 0
 os lb remove 506
-os lb copy 30 506
+os lb copy 5 506
 os blockprops 506 reset
-os lb edit 506 name #Indigo Tile-W
-os lb edit 506 shape 0
-os lb edit 506 collide 0
-os lb edit 506 max 1 16 16
-os lb edit 506 blockslight no
+os lb edit 506 name Acacia Door-WE
+os lb edit 506 alltex 288
+os lb edit 506 fronttex 256
+os lb edit 506 backtex 256
+os lb edit 506 max 16 16 9
+os lb edit 506 min 0 0 7
+os lb edit 506 draw 2
+os lb edit 506 blockslight 0
+os blockprops 506 door
 os blockprops 506 lavakills
-os lb edit 506 fallback 0
 os lb remove 507
-os lb copy 30 507
+os lb copy 5 507
 os blockprops 507 reset
-os lb edit 507 name #Indigo Tile-E
-os lb edit 507 shape 0
-os lb edit 507 collide 0
-os lb edit 507 min 15 0 0
-os lb edit 507 blockslight no
+os lb edit 507 name Birch Door-NS
+os lb edit 507 alltex 289
+os lb edit 507 lefttex 257
+os lb edit 507 righttex 257
+os lb edit 507 max 9 16 16
+os lb edit 507 min 7 0 0
+os lb edit 507 draw 2
+os lb edit 507 blockslight 0
+os blockprops 507 door
 os blockprops 507 lavakills
-os lb edit 507 fallback 0
-os lb remove 391
-os lb copy 31 391
-os blockprops 391 reset
-os lb edit 391 name #Violet Tile-D
-os lb edit 391 shape 0
-os lb edit 391 collide 0
-os lb edit 391 max 16 1 16
-os blockprops 391 lavakills
-os lb edit 391 fallback 44
 os lb remove 508
-os lb copy 31 508
+os lb copy 5 508
 os blockprops 508 reset
-os lb edit 508 name #Violet Tile-U
-os lb edit 508 shape 0
-os lb edit 508 collide 0
-os lb edit 508 min 0 15 0
+os lb edit 508 name Birch Door-WE
+os lb edit 508 alltex 289
+os lb edit 508 fronttex 257
+os lb edit 508 backtex 257
+os lb edit 508 max 16 16 9
+os lb edit 508 min 0 0 7
+os lb edit 508 draw 2
+os lb edit 508 blockslight 0
+os blockprops 508 door
 os blockprops 508 lavakills
-os lb edit 508 fallback 0
 os lb remove 509
-os lb copy 31 509
+os lb copy 5 509
 os blockprops 509 reset
-os lb edit 509 name #Violet Tile-N
-os lb edit 509 shape 0
-os lb edit 509 collide 0
-os lb edit 509 max 16 16 1
-os lb edit 509 blockslight no
+os lb edit 509 name Dark Oak Door-NS
+os lb edit 509 alltex 290
+os lb edit 509 lefttex 258
+os lb edit 509 righttex 258
+os lb edit 509 max 9 16 16
+os lb edit 509 min 7 0 0
+os lb edit 509 draw 2
+os lb edit 509 blockslight 0
+os blockprops 509 door
 os blockprops 509 lavakills
-os lb edit 509 fallback 0
 os lb remove 510
-os lb copy 31 510
+os lb copy 5 510
 os blockprops 510 reset
-os lb edit 510 name #Violet Tile-S
-os lb edit 510 shape 0
-os lb edit 510 collide 0
-os lb edit 510 min 0 0 15
-os lb edit 510 blockslight no
+os lb edit 510 name Dark Oak Door-WE
+os lb edit 510 alltex 290
+os lb edit 510 fronttex 258
+os lb edit 510 backtex 258
+os lb edit 510 max 16 16 9
+os lb edit 510 min 0 0 7
+os lb edit 510 draw 2
+os lb edit 510 blockslight 0
+os blockprops 510 door
 os blockprops 510 lavakills
-os lb edit 510 fallback 0
+os lb remove 106
+os lb copy 42 106
+os blockprops 106 reset
+os lb edit 106 name Iron Door-NS
+os lb edit 106 alltex 163
+os lb edit 106 lefttex 259
+os lb edit 106 righttex 259
+os lb edit 106 max 9 16 16
+os lb edit 106 min 7 0 0
+os lb edit 106 draw 2
+os lb edit 106 blockslight 0
+os blockprops 106 door
+os lb remove 107
+os lb copy 42 107
+os blockprops 107 reset
+os lb edit 107 name Iron Door-WE
+os lb edit 107 alltex 163
+os lb edit 107 fronttex 259
+os lb edit 107 backtex 259
+os lb edit 107 max 16 16 9
+os lb edit 107 min 0 0 7
+os lb edit 107 draw 2
+os lb edit 107 blockslight 0
+os blockprops 107 door
 os lb remove 511
-os lb copy 31 511
+os lb copy 5 511
 os blockprops 511 reset
-os lb edit 511 name #Violet Tile-W
-os lb edit 511 shape 0
-os lb edit 511 collide 0
-os lb edit 511 max 1 16 16
-os lb edit 511 blockslight no
+os lb edit 511 name Jungle Door-NS
+os lb edit 511 alltex 291
+os lb edit 511 lefttex 260
+os lb edit 511 righttex 260
+os lb edit 511 max 9 16 16
+os lb edit 511 min 7 0 0
+os lb edit 511 draw 2
+os lb edit 511 blockslight 0
+os blockprops 511 door
 os blockprops 511 lavakills
-os lb edit 511 fallback 0
 os lb remove 512
-os lb copy 31 512
+os lb copy 5 512
 os blockprops 512 reset
-os lb edit 512 name #Violet Tile-E
-os lb edit 512 shape 0
-os lb edit 512 collide 0
-os lb edit 512 min 15 0 0
-os lb edit 512 blockslight no
+os lb edit 512 name Jungle Door-WE
+os lb edit 512 alltex 291
+os lb edit 512 fronttex 260
+os lb edit 512 backtex 260
+os lb edit 512 max 16 16 9
+os lb edit 512 min 0 0 7
+os lb edit 512 draw 2
+os lb edit 512 blockslight 0
+os blockprops 512 door
 os blockprops 512 lavakills
-os lb edit 512 fallback 0
-os lb remove 392
-os lb copy 32 392
-os blockprops 392 reset
-os lb edit 392 name #Magenta Tile-D
-os lb edit 392 shape 0
-os lb edit 392 collide 0
-os lb edit 392 max 16 1 16
-os blockprops 392 lavakills
-os lb edit 392 fallback 44
+os lb remove 102
+os lb copy 5 102
+os blockprops 102 reset
+os lb edit 102 name Oak Door-NS
+os lb edit 102 alltex 4
+os lb edit 102 lefttex 261
+os lb edit 102 righttex 261
+os lb edit 102 max 9 16 16
+os lb edit 102 min 7 0 0
+os lb edit 102 draw 2
+os lb edit 102 blockslight 0
+os blockprops 102 door
+os blockprops 102 lavakills
+os lb remove 103
+os lb copy 5 103
+os blockprops 103 reset
+os lb edit 103 name Oak Door-WE
+os lb edit 103 alltex 4
+os lb edit 103 fronttex 261
+os lb edit 103 backtex 261
+os lb edit 103 max 16 16 9
+os lb edit 103 min 0 0 7
+os lb edit 103 draw 2
+os lb edit 103 blockslight 0
+os blockprops 103 door
+os blockprops 103 lavakills
 os lb remove 513
-os lb copy 32 513
+os lb copy 5 513
 os blockprops 513 reset
-os lb edit 513 name #Magenta Tile-U
-os lb edit 513 shape 0
-os lb edit 513 collide 0
-os lb edit 513 min 0 15 0
+os lb edit 513 name Spruce Door-NS
+os lb edit 513 alltex 292
+os lb edit 513 lefttex 262
+os lb edit 513 righttex 262
+os lb edit 513 max 9 16 16
+os lb edit 513 min 7 0 0
+os lb edit 513 draw 2
+os lb edit 513 blockslight 0
+os blockprops 513 door
 os blockprops 513 lavakills
-os lb edit 513 fallback 0
 os lb remove 514
-os lb copy 32 514
+os lb copy 5 514
 os blockprops 514 reset
-os lb edit 514 name #Magenta Tile-N
-os lb edit 514 shape 0
-os lb edit 514 collide 0
-os lb edit 514 max 16 16 1
-os lb edit 514 blockslight no
+os lb edit 514 name Spruce Door-WE
+os lb edit 514 alltex 292
+os lb edit 514 fronttex 262
+os lb edit 514 backtex 262
+os lb edit 514 max 16 16 9
+os lb edit 514 min 0 0 7
+os lb edit 514 draw 2
+os lb edit 514 blockslight 0
+os blockprops 514 door
 os blockprops 514 lavakills
-os lb edit 514 fallback 0
 os lb remove 515
-os lb copy 32 515
+os lb copy 5 515
 os blockprops 515 reset
-os lb edit 515 name #Magenta Tile-S
-os lb edit 515 shape 0
-os lb edit 515 collide 0
-os lb edit 515 min 0 0 15
-os lb edit 515 blockslight no
+os lb edit 515 name Acacia Door Bottom-NS
+os lb edit 515 alltex 288
+os lb edit 515 lefttex 272
+os lb edit 515 righttex 272
+os lb edit 515 max 9 16 16
+os lb edit 515 min 7 0 0
+os lb edit 515 draw 2
+os lb edit 515 blockslight 0
+os blockprops 515 door
 os blockprops 515 lavakills
-os lb edit 515 fallback 0
 os lb remove 516
-os lb copy 32 516
+os lb copy 5 516
 os blockprops 516 reset
-os lb edit 516 name #Magenta Tile-W
-os lb edit 516 shape 0
-os lb edit 516 collide 0
-os lb edit 516 max 1 16 16
-os lb edit 516 blockslight no
+os lb edit 516 name Acacia Door Bottom-WE
+os lb edit 516 alltex 288
+os lb edit 516 fronttex 272
+os lb edit 516 backtex 272
+os lb edit 516 max 16 16 9
+os lb edit 516 min 0 0 7
+os lb edit 516 draw 2
+os lb edit 516 blockslight 0
+os blockprops 516 door
 os blockprops 516 lavakills
-os lb edit 516 fallback 0
 os lb remove 517
-os lb copy 32 517
+os lb copy 5 517
 os blockprops 517 reset
-os lb edit 517 name #Magenta Tile-E
-os lb edit 517 shape 0
-os lb edit 517 collide 0
-os lb edit 517 min 15 0 0
-os lb edit 517 blockslight no
+os lb edit 517 name Birch Door Bottom-NS
+os lb edit 517 alltex 289
+os lb edit 517 lefttex 273
+os lb edit 517 righttex 273
+os lb edit 517 max 9 16 16
+os lb edit 517 min 7 0 0
+os lb edit 517 draw 2
+os lb edit 517 blockslight 0
+os blockprops 517 door
 os blockprops 517 lavakills
-os lb edit 517 fallback 0
-os lb remove 393
-os lb copy 33 393
-os blockprops 393 reset
-os lb edit 393 name #Pink Tile-D
-os lb edit 393 shape 0
-os lb edit 393 collide 0
-os lb edit 393 max 16 1 16
-os blockprops 393 lavakills
-os lb edit 393 fallback 44
 os lb remove 518
-os lb copy 33 518
+os lb copy 5 518
 os blockprops 518 reset
-os lb edit 518 name #Pink Tile-U
-os lb edit 518 shape 0
-os lb edit 518 collide 0
-os lb edit 518 min 0 15 0
+os lb edit 518 name Birch Door Bottom-WE
+os lb edit 518 alltex 289
+os lb edit 518 fronttex 273
+os lb edit 518 backtex 273
+os lb edit 518 max 16 16 9
+os lb edit 518 min 0 0 7
+os lb edit 518 draw 2
+os lb edit 518 blockslight 0
+os blockprops 518 door
 os blockprops 518 lavakills
-os lb edit 518 fallback 0
 os lb remove 519
-os lb copy 33 519
+os lb copy 5 519
 os blockprops 519 reset
-os lb edit 519 name #Pink Tile-N
-os lb edit 519 shape 0
-os lb edit 519 collide 0
-os lb edit 519 max 16 16 1
-os lb edit 519 blockslight no
+os lb edit 519 name Dark Oak Door Bottom-NS
+os lb edit 519 alltex 290
+os lb edit 519 lefttex 274
+os lb edit 519 righttex 274
+os lb edit 519 max 9 16 16
+os lb edit 519 min 7 0 0
+os lb edit 519 draw 2
+os lb edit 519 blockslight 0
+os blockprops 519 door
 os blockprops 519 lavakills
-os lb edit 519 fallback 0
 os lb remove 520
-os lb copy 33 520
+os lb copy 5 520
 os blockprops 520 reset
-os lb edit 520 name #Pink Tile-S
-os lb edit 520 shape 0
-os lb edit 520 collide 0
-os lb edit 520 min 0 0 15
-os lb edit 520 blockslight no
+os lb edit 520 name Dark Oak Door Bottom-WE
+os lb edit 520 alltex 290
+os lb edit 520 fronttex 274
+os lb edit 520 backtex 274
+os lb edit 520 max 16 16 9
+os lb edit 520 min 0 0 7
+os lb edit 520 draw 2
+os lb edit 520 blockslight 0
+os blockprops 520 door
 os blockprops 520 lavakills
-os lb edit 520 fallback 0
+os lb remove 108
+os lb copy 42 108
+os blockprops 108 reset
+os lb edit 108 name Iron Door Bottom-NS
+os lb edit 108 alltex 163
+os lb edit 108 lefttex 275
+os lb edit 108 righttex 275
+os lb edit 108 max 9 16 16
+os lb edit 108 min 7 0 0
+os lb edit 108 draw 2
+os lb edit 108 blockslight 0
+os blockprops 108 door
+os lb remove 109
+os lb copy 42 109
+os blockprops 109 reset
+os lb edit 109 name Iron Door Bottom-WE
+os lb edit 109 alltex 163
+os lb edit 109 fronttex 275
+os lb edit 109 backtex 275
+os lb edit 109 max 16 16 9
+os lb edit 109 min 0 0 7
+os lb edit 109 draw 2
+os lb edit 109 blockslight 0
+os blockprops 109 door
 os lb remove 521
-os lb copy 33 521
+os lb copy 5 521
 os blockprops 521 reset
-os lb edit 521 name #Pink Tile-W
-os lb edit 521 shape 0
-os lb edit 521 collide 0
-os lb edit 521 max 1 16 16
-os lb edit 521 blockslight no
+os lb edit 521 name Jungle Door Bottom-NS
+os lb edit 521 alltex 291
+os lb edit 521 lefttex 276
+os lb edit 521 righttex 276
+os lb edit 521 max 9 16 16
+os lb edit 521 min 7 0 0
+os lb edit 521 draw 2
+os lb edit 521 blockslight 0
+os blockprops 521 door
 os blockprops 521 lavakills
-os lb edit 521 fallback 0
 os lb remove 522
-os lb copy 33 522
+os lb copy 5 522
 os blockprops 522 reset
-os lb edit 522 name #Pink Tile-E
-os lb edit 522 shape 0
-os lb edit 522 collide 0
-os lb edit 522 min 15 0 0
-os lb edit 522 blockslight no
+os lb edit 522 name Jungle Door Bottom-WE
+os lb edit 522 alltex 291
+os lb edit 522 fronttex 276
+os lb edit 522 backtex 276
+os lb edit 522 max 16 16 9
+os lb edit 522 min 0 0 7
+os lb edit 522 draw 2
+os lb edit 522 blockslight 0
+os blockprops 522 door
 os blockprops 522 lavakills
-os lb edit 522 fallback 0
-os lb remove 394
-os lb copy 34 394
-os blockprops 394 reset
-os lb edit 394 name #Black Tile-D
-os lb edit 394 shape 0
-os lb edit 394 collide 0
-os lb edit 394 max 16 1 16
-os blockprops 394 lavakills
-os lb edit 394 fallback 44
+os lb remove 104
+os lb copy 5 104
+os blockprops 104 reset
+os lb edit 104 name Oak Door Bottom-NS
+os lb edit 104 alltex 4
+os lb edit 104 lefttex 277
+os lb edit 104 righttex 277
+os lb edit 104 max 9 16 16
+os lb edit 104 min 7 0 0
+os lb edit 104 draw 2
+os lb edit 104 blockslight 0
+os blockprops 104 door
+os blockprops 104 lavakills
+os lb remove 105
+os lb copy 5 105
+os blockprops 105 reset
+os lb edit 105 name Oak Door Bottom-WE
+os lb edit 105 alltex 4
+os lb edit 105 fronttex 277
+os lb edit 105 backtex 277
+os lb edit 105 max 16 16 9
+os lb edit 105 min 0 0 7
+os lb edit 105 draw 2
+os lb edit 105 blockslight 0
+os blockprops 105 door
+os blockprops 105 lavakills
 os lb remove 523
-os lb copy 34 523
+os lb copy 5 523
 os blockprops 523 reset
-os lb edit 523 name #Black Tile-U
-os lb edit 523 shape 0
-os lb edit 523 collide 0
-os lb edit 523 min 0 15 0
+os lb edit 523 name Spruce Door Bottom-NS
+os lb edit 523 alltex 292
+os lb edit 523 lefttex 278
+os lb edit 523 righttex 278
+os lb edit 523 max 9 16 16
+os lb edit 523 min 7 0 0
+os lb edit 523 draw 2
+os lb edit 523 blockslight 0
+os blockprops 523 door
 os blockprops 523 lavakills
-os lb edit 523 fallback 0
 os lb remove 524
-os lb copy 34 524
+os lb copy 5 524
 os blockprops 524 reset
-os lb edit 524 name #Black Tile-N
-os lb edit 524 shape 0
-os lb edit 524 collide 0
-os lb edit 524 max 16 16 1
-os lb edit 524 blockslight no
+os lb edit 524 name Spruce Door Bottom-WE
+os lb edit 524 alltex 292
+os lb edit 524 fronttex 278
+os lb edit 524 backtex 278
+os lb edit 524 max 16 16 9
+os lb edit 524 min 0 0 7
+os lb edit 524 draw 2
+os lb edit 524 blockslight 0
+os blockprops 524 door
 os blockprops 524 lavakills
-os lb edit 524 fallback 0
 os lb remove 525
-os lb copy 34 525
+os lb copy 1 525
 os blockprops 525 reset
-os lb edit 525 name #Black Tile-S
-os lb edit 525 shape 0
-os lb edit 525 collide 0
-os lb edit 525 min 0 0 15
-os lb edit 525 blockslight no
-os blockprops 525 lavakills
-os lb edit 525 fallback 0
+os lb edit 525 name Dragon Egg
+os lb edit 525 alltex 164
+os lb remove 98
+os lb copy 1 98
+os blockprops 98 reset
+os lb edit 98 name Emerald Block
+os lb edit 98 alltex 113
+os lb remove 99
+os lb copy 1 99
+os blockprops 99 reset
+os lb edit 99 name Emerald Ore
+os lb edit 99 alltex 114
 os lb remove 526
-os lb copy 34 526
+os lb copy 39 526
 os blockprops 526 reset
-os lb edit 526 name #Black Tile-W
-os lb edit 526 shape 0
-os lb edit 526 collide 0
-os lb edit 526 max 1 16 16
-os lb edit 526 blockslight no
-os blockprops 526 lavakills
-os lb edit 526 fallback 0
+os lb edit 526 name Emerald
+os lb edit 526 alltex 165
+os lb edit 526 sound 4
 os lb remove 527
-os lb copy 34 527
+os lb copy 49 527
 os blockprops 527 reset
-os lb edit 527 name #Black Tile-E
-os lb edit 527 shape 0
-os lb edit 527 collide 0
-os lb edit 527 min 15 0 0
-os lb edit 527 blockslight no
+os lb edit 527 name Enchanting Table
+os lb edit 527 toptex 166
+os lb edit 527 bottomtex 167
+os lb edit 527 sidetex 168
+os lb edit 527 draw 2
+os lb edit 527 max 16 12 16
+os lb edit 527 min 0 0 0
+os lb edit 527 draw 2
+os blockprops 527 waterkills
 os blockprops 527 lavakills
-os lb edit 527 fallback 0
-os lb remove 395
-os lb copy 35 395
-os blockprops 395 reset
-os lb edit 395 name #Gray Tile-D
-os lb edit 395 shape 0
-os lb edit 395 collide 0
-os lb edit 395 max 16 1 16
-os blockprops 395 lavakills
-os lb edit 395 fallback 44
 os lb remove 528
-os lb copy 35 528
+os lb copy 5 528
 os blockprops 528 reset
-os lb edit 528 name #Gray Tile-U
-os lb edit 528 shape 0
-os lb edit 528 collide 0
-os lb edit 528 min 0 15 0
+os lb edit 528 name End Portal Frame
+os lb edit 528 toptex 169
+os lb edit 528 bottomtex 170
+os lb edit 528 sidetex 171
+os lb edit 528 max 16 12 16
 os blockprops 528 lavakills
-os lb edit 528 fallback 0
 os lb remove 529
-os lb copy 35 529
+os lb copy 1 529
 os blockprops 529 reset
-os lb edit 529 name #Gray Tile-N
-os lb edit 529 shape 0
-os lb edit 529 collide 0
-os lb edit 529 max 16 16 1
-os lb edit 529 blockslight no
-os blockprops 529 lavakills
-os lb edit 529 fallback 0
+os lb edit 529 name End Stone Bricks
+os lb edit 529 alltex 172
 os lb remove 530
-os lb copy 35 530
+os lb copy 1 530
 os blockprops 530 reset
-os lb edit 530 name #Gray Tile-S
-os lb edit 530 shape 0
-os lb edit 530 collide 0
-os lb edit 530 min 0 0 15
-os lb edit 530 blockslight no
-os blockprops 530 lavakills
-os lb edit 530 fallback 0
+os lb edit 530 name End Stone
+os lb edit 530 alltex 170
 os lb remove 531
-os lb copy 35 531
+os lb copy 2 531
 os blockprops 531 reset
-os lb edit 531 name #Gray Tile-W
-os lb edit 531 shape 0
-os lb edit 531 collide 0
-os lb edit 531 max 1 16 16
-os lb edit 531 blockslight no
-os blockprops 531 lavakills
-os lb edit 531 fallback 0
+os lb edit 531 name Farmland Moist
+os lb edit 531 toptex 173
+os lb edit 531 bottomtex 2
+os lb edit 531 sidetex 2
 os lb remove 532
-os lb copy 35 532
+os lb copy 2 532
 os blockprops 532 reset
-os lb edit 532 name #Gray Tile-E
-os lb edit 532 shape 0
-os lb edit 532 collide 0
-os lb edit 532 min 15 0 0
-os lb edit 532 blockslight no
-os blockprops 532 lavakills
-os lb edit 532 fallback 0
-os lb remove 396
-os lb copy 36 396
-os blockprops 396 reset
-os lb edit 396 name #White Tile-D
-os lb edit 396 shape 0
-os lb edit 396 collide 0
-os lb edit 396 max 16 1 16
-os blockprops 396 lavakills
-os lb edit 396 fallback 44
+os lb edit 532 name Farmland
+os lb edit 532 toptex 174
+os lb edit 532 bottomtex 2
+os lb edit 532 sidetex 2
+os lb remove 110
+os lb copy 60 110
+os blockprops 110 reset
+os lb edit 110 name Forcefield
+os lb edit 110 alltex 117
 os lb remove 533
-os lb copy 36 533
+os lb copy 1 533
 os blockprops 533 reset
-os lb edit 533 name #White Tile-U
-os lb edit 533 shape 0
-os lb edit 533 collide 0
-os lb edit 533 min 0 15 0
-os blockprops 533 lavakills
-os lb edit 533 fallback 0
+os lb edit 533 name Furnace
+os lb edit 533 alltex 175
+os lb edit 533 lefttex 176
+os lb edit 533 righttex 176
+os lb edit 533 fronttex 177
+os lb edit 533 backtex 177
 os lb remove 534
-os lb copy 36 534
+os lb copy 62 534
 os blockprops 534 reset
-os lb edit 534 name #White Tile-N
-os lb edit 534 shape 0
-os lb edit 534 collide 0
-os lb edit 534 max 16 16 1
-os lb edit 534 blockslight no
-os blockprops 534 lavakills
-os lb edit 534 fallback 0
+os lb edit 534 name Glowstone
+os lb edit 534 alltex 178
 os lb remove 535
-os lb copy 36 535
+os lb copy 2 535
 os blockprops 535 reset
-os lb edit 535 name #White Tile-S
-os lb edit 535 shape 0
-os lb edit 535 collide 0
-os lb edit 535 min 0 0 15
-os lb edit 535 blockslight no
-os blockprops 535 lavakills
-os lb edit 535 fallback 0
+os lb edit 535 name Grass Path
+os lb edit 535 toptex 179
+os lb edit 535 bottomtex 2
+os lb edit 535 sidetex 180
+os lb edit 535 max 16 15 16
+os lb edit 535 speed 2.00
 os lb remove 536
-os lb copy 36 536
+os lb copy 2 536
 os blockprops 536 reset
-os lb edit 536 name #White Tile-W
-os lb edit 536 shape 0
-os lb edit 536 collide 0
-os lb edit 536 max 1 16 16
-os lb edit 536 blockslight no
-os blockprops 536 lavakills
-os lb edit 536 fallback 0
+os lb edit 536 name Hay Block
+os lb edit 536 alltex 181
+os lb edit 536 sidetex 182
 os lb remove 537
-os lb copy 36 537
+os lb copy 5 537
 os blockprops 537 reset
-os lb edit 537 name #White Tile-E
-os lb edit 537 shape 0
-os lb edit 537 collide 0
-os lb edit 537 min 15 0 0
-os lb edit 537 blockslight no
+os lb edit 537 name Ladder-N
+os lb edit 537 alltex 183
+os lb edit 537 draw 2
+os lb edit 537 collide 7
 os blockprops 537 lavakills
-os lb edit 537 fallback 0
-os lb remove 397
-os lb copy 55 397
-os blockprops 397 reset
-os lb edit 397 name #Light pink Tile-D
-os lb edit 397 shape 0
-os lb edit 397 collide 0
-os lb edit 397 max 16 1 16
-os blockprops 397 lavakills
-os lb edit 397 fallback 44
+os lb edit 537 blockslight 0
+os lb edit 537 max 15 16 1
+os lb edit 537 min 1 0 0
 os lb remove 538
-os lb copy 55 538
+os lb copy 5 538
 os blockprops 538 reset
-os lb edit 538 name #Light pink Tile-U
-os lb edit 538 shape 0
-os lb edit 538 collide 0
-os lb edit 538 min 0 15 0
+os lb edit 538 name Ladder-S
+os lb edit 538 alltex 183
+os lb edit 538 draw 2
+os lb edit 538 collide 7
 os blockprops 538 lavakills
-os lb edit 538 fallback 0
+os lb edit 538 blockslight 0
+os lb edit 538 max 15 16 16
+os lb edit 538 min 1 0 15
 os lb remove 539
-os lb copy 55 539
+os lb copy 5 539
 os blockprops 539 reset
-os lb edit 539 name #Light pink Tile-N
-os lb edit 539 shape 0
-os lb edit 539 collide 0
-os lb edit 539 max 16 16 1
-os lb edit 539 blockslight no
+os lb edit 539 name Ladder-W
+os lb edit 539 alltex 183
+os lb edit 539 draw 2
+os lb edit 539 collide 7
 os blockprops 539 lavakills
-os lb edit 539 fallback 0
+os lb edit 539 blockslight 0
+os lb edit 539 max 1 16 15
+os lb edit 539 min 0 0 1
 os lb remove 540
-os lb copy 55 540
+os lb copy 5 540
 os blockprops 540 reset
-os lb edit 540 name #Light pink Tile-S
-os lb edit 540 shape 0
-os lb edit 540 collide 0
-os lb edit 540 min 0 0 15
-os lb edit 540 blockslight no
+os lb edit 540 name Ladder-E
+os lb edit 540 alltex 183
+os lb edit 540 draw 2
+os lb edit 540 collide 7
 os blockprops 540 lavakills
-os lb edit 540 fallback 0
+os lb edit 540 blockslight 0
+os lb edit 540 max 16 16 15
+os lb edit 540 min 15 0 1
 os lb remove 541
-os lb copy 55 541
+os lb copy 1 541
 os blockprops 541 reset
-os lb edit 541 name #Light pink Tile-W
-os lb edit 541 shape 0
-os lb edit 541 collide 0
-os lb edit 541 max 1 16 16
-os lb edit 541 blockslight no
-os blockprops 541 lavakills
-os lb edit 541 fallback 0
+os lb edit 541 name Lamp Off
+os lb edit 541 alltex 184
+os lb remove 66
+os lb copy 62 66
+os blockprops 66 reset
+os lb edit 66 name Lamp
+os lb edit 66 alltex 85
 os lb remove 542
-os lb copy 55 542
+os lb copy 1 542
 os blockprops 542 reset
-os lb edit 542 name #Light pink Tile-E
-os lb edit 542 shape 0
-os lb edit 542 collide 0
-os lb edit 542 min 15 0 0
-os lb edit 542 blockslight no
-os blockprops 542 lavakills
-os lb edit 542 fallback 0
-os lb remove 398
-os lb copy 56 398
-os blockprops 398 reset
-os lb edit 398 name #Forest green Tile-D
-os lb edit 398 shape 0
-os lb edit 398 collide 0
-os lb edit 398 max 16 1 16
-os blockprops 398 lavakills
-os lb edit 398 fallback 44
+os lb edit 542 name Lapis Block
+os lb edit 542 alltex 185
 os lb remove 543
-os lb copy 56 543
+os lb copy 1 543
 os blockprops 543 reset
-os lb edit 543 name #Forest green Tile-U
-os lb edit 543 shape 0
-os lb edit 543 collide 0
-os lb edit 543 min 0 15 0
-os blockprops 543 lavakills
-os lb edit 543 fallback 0
+os lb edit 543 name Lapis Ore
+os lb edit 543 alltex 186
+os lb remove 93
+os lb copy 2 93
+os blockprops 93 reset
+os lb edit 93 name Lily Pad
+os lb edit 93 alltex 107
+os lb edit 93 max 15 1 15
+os lb edit 93 min 2 0 1
+os lb edit 93 draw 2
+os lb edit 93 blockslight 0
 os lb remove 544
-os lb copy 56 544
+os lb copy 2 544
 os blockprops 544 reset
-os lb edit 544 name #Forest green Tile-N
-os lb edit 544 shape 0
-os lb edit 544 collide 0
-os lb edit 544 max 16 16 1
-os lb edit 544 blockslight no
-os blockprops 544 lavakills
-os lb edit 544 fallback 0
+os lb edit 544 name Melon
+os lb edit 544 alltex 187
+os lb edit 544 sidetex 188
 os lb remove 545
-os lb copy 56 545
+os lb copy 1 545
 os blockprops 545 reset
-os lb edit 545 name #Forest green Tile-S
-os lb edit 545 shape 0
-os lb edit 545 collide 0
-os lb edit 545 min 0 0 15
-os lb edit 545 blockslight no
-os blockprops 545 lavakills
-os lb edit 545 fallback 0
+os lb edit 545 name Mossy Stone Bricks
+os lb edit 545 alltex 189
 os lb remove 546
-os lb copy 56 546
+os lb copy 5 546
 os blockprops 546 reset
-os lb edit 546 name #Forest green Tile-W
-os lb edit 546 shape 0
-os lb edit 546 collide 0
-os lb edit 546 max 1 16 16
-os lb edit 546 blockslight no
+os lb edit 546 name Brown Mushroom Block
+os lb edit 546 alltex 190
 os blockprops 546 lavakills
-os lb edit 546 fallback 0
 os lb remove 547
-os lb copy 56 547
+os lb copy 2 547
 os blockprops 547 reset
-os lb edit 547 name #Forest green Tile-E
-os lb edit 547 shape 0
-os lb edit 547 collide 0
-os lb edit 547 min 15 0 0
-os lb edit 547 blockslight no
-os blockprops 547 lavakills
-os lb edit 547 fallback 0
-os lb remove 399
-os lb copy 57 399
-os blockprops 399 reset
-os lb edit 399 name #Brown Tile-D
-os lb edit 399 shape 0
-os lb edit 399 collide 0
-os lb edit 399 max 16 1 16
-os blockprops 399 lavakills
-os lb edit 399 fallback 44
+os lb edit 547 name Red Mushroom Block
+os lb edit 547 alltex 191
 os lb remove 548
-os lb copy 57 548
+os lb copy 2 548
 os blockprops 548 reset
-os lb edit 548 name #Brown Tile-U
-os lb edit 548 shape 0
-os lb edit 548 collide 0
-os lb edit 548 min 0 15 0
-os blockprops 548 lavakills
-os lb edit 548 fallback 0
+os lb edit 548 name Mycelium
+os lb edit 548 alltex 192
+os lb edit 548 sidetex 193
 os lb remove 549
-os lb copy 57 549
+os lb copy 1 549
 os blockprops 549 reset
-os lb edit 549 name #Brown Tile-N
-os lb edit 549 shape 0
-os lb edit 549 collide 0
-os lb edit 549 max 16 16 1
-os lb edit 549 blockslight no
-os blockprops 549 lavakills
-os lb edit 549 fallback 0
+os lb edit 549 name Red Nether Bricks
+os lb edit 549 alltex 194
+os lb edit 549 fallback 21
 os lb remove 550
-os lb copy 57 550
+os lb copy 1 550
 os blockprops 550 reset
-os lb edit 550 name #Brown Tile-S
-os lb edit 550 shape 0
-os lb edit 550 collide 0
-os lb edit 550 min 0 0 15
-os lb edit 550 blockslight no
-os blockprops 550 lavakills
-os lb edit 550 fallback 0
+os lb edit 550 name Nether Bricks
+os lb edit 550 alltex 195
 os lb remove 551
-os lb copy 57 551
+os lb copy 1 551
 os blockprops 551 reset
-os lb edit 551 name #Brown Tile-W
-os lb edit 551 shape 0
-os lb edit 551 collide 0
-os lb edit 551 max 1 16 16
-os lb edit 551 blockslight no
-os blockprops 551 lavakills
-os lb edit 551 fallback 0
+os lb edit 551 name Nether Quartz Ore
+os lb edit 551 alltex 196
 os lb remove 552
-os lb copy 57 552
+os lb copy 1 552
 os blockprops 552 reset
-os lb edit 552 name #Brown Tile-E
-os lb edit 552 shape 0
-os lb edit 552 collide 0
-os lb edit 552 min 15 0 0
-os lb edit 552 blockslight no
-os blockprops 552 lavakills
-os lb edit 552 fallback 0
-os lb remove 400
-os lb copy 58 400
-os blockprops 400 reset
-os lb edit 400 name #Deep blue Tile-D
-os lb edit 400 shape 0
-os lb edit 400 collide 0
-os lb edit 400 max 16 1 16
-os blockprops 400 lavakills
-os lb edit 400 fallback 44
+os lb edit 552 name Nether Wart Block
+os lb edit 552 alltex 197
 os lb remove 553
-os lb copy 58 553
+os lb copy 1 553
 os blockprops 553 reset
-os lb edit 553 name #Deep blue Tile-U
-os lb edit 553 shape 0
-os lb edit 553 collide 0
-os lb edit 553 min 0 15 0
-os blockprops 553 lavakills
-os lb edit 553 fallback 0
+os lb edit 553 name Netherrack
+os lb edit 553 alltex 198
 os lb remove 554
-os lb copy 58 554
+os lb copy 5 554
 os blockprops 554 reset
-os lb edit 554 name #Deep blue Tile-N
-os lb edit 554 shape 0
-os lb edit 554 collide 0
-os lb edit 554 max 16 16 1
-os lb edit 554 blockslight no
+os lb edit 554 name Note Block
+os lb edit 554 toptex 199
+os lb edit 554 bottomtex 200
+os lb edit 554 sidetex 199
 os blockprops 554 lavakills
-os lb edit 554 fallback 0
 os lb remove 555
-os lb copy 58 555
+os lb copy 1 555
 os blockprops 555 reset
-os lb edit 555 name #Deep blue Tile-S
-os lb edit 555 shape 0
-os lb edit 555 collide 0
-os lb edit 555 min 0 0 15
-os lb edit 555 blockslight no
-os blockprops 555 lavakills
-os lb edit 555 fallback 0
+os lb edit 555 name Observer
+os lb edit 555 alltex 201
+os lb edit 555 lefttex 202
+os lb edit 555 righttex 202
+os lb edit 555 fronttex 203
+os lb edit 555 backtex 203
 os lb remove 556
-os lb copy 58 556
+os lb copy 2 556
 os blockprops 556 reset
-os lb edit 556 name #Deep blue Tile-W
-os lb edit 556 shape 0
-os lb edit 556 collide 0
-os lb edit 556 max 1 16 16
-os lb edit 556 blockslight no
-os blockprops 556 lavakills
-os lb edit 556 fallback 0
+os lb edit 556 name Podzol
+os lb edit 556 toptex 204
+os lb edit 556 bottomtex 2
+os lb edit 556 sidetex 205
 os lb remove 557
-os lb copy 58 557
+os lb copy 1 557
 os blockprops 557 reset
-os lb edit 557 name #Deep blue Tile-E
-os lb edit 557 shape 0
-os lb edit 557 collide 0
-os lb edit 557 min 15 0 0
-os lb edit 557 blockslight no
-os blockprops 557 lavakills
-os lb edit 557 fallback 0
-os lb remove 401
-os lb copy 59 401
-os blockprops 401 reset
-os lb edit 401 name #Turquoise Tile-D
-os lb edit 401 shape 0
-os lb edit 401 collide 0
-os lb edit 401 max 16 1 16
-os blockprops 401 lavakills
-os lb edit 401 fallback 44
+os lb edit 557 name Dark Prismarine
+os lb edit 557 alltex 206
 os lb remove 558
-os lb copy 59 558
+os lb copy 1 558
 os blockprops 558 reset
-os lb edit 558 name #Turquoise Tile-U
-os lb edit 558 shape 0
-os lb edit 558 collide 0
-os lb edit 558 min 0 15 0
-os blockprops 558 lavakills
-os lb edit 558 fallback 0
+os lb edit 558 name Prismarine Bricks
+os lb edit 558 alltex 207
 os lb remove 559
-os lb copy 59 559
+os lb copy 1 559
 os blockprops 559 reset
-os lb edit 559 name #Turquoise Tile-N
-os lb edit 559 shape 0
-os lb edit 559 collide 0
-os lb edit 559 max 16 16 1
-os lb edit 559 blockslight no
-os blockprops 559 lavakills
-os lb edit 559 fallback 0
+os lb edit 559 name Prismarine
+os lb edit 559 alltex 208
 os lb remove 560
-os lb copy 59 560
+os lb copy 5 560
 os blockprops 560 reset
-os lb edit 560 name #Turquoise Tile-S
-os lb edit 560 shape 0
-os lb edit 560 collide 0
-os lb edit 560 min 0 0 15
-os lb edit 560 blockslight no
+os lb edit 560 name Pumpkin
+os lb edit 560 alltex 209
+os lb edit 560 sidetex 210
 os blockprops 560 lavakills
-os lb edit 560 fallback 0
 os lb remove 561
-os lb copy 59 561
+os lb copy 1 561
 os blockprops 561 reset
-os lb edit 561 name #Turquoise Tile-W
-os lb edit 561 shape 0
-os lb edit 561 collide 0
-os lb edit 561 max 1 16 16
-os lb edit 561 blockslight no
-os blockprops 561 lavakills
-os lb edit 561 fallback 0
+os lb edit 561 name Purpur Block
+os lb edit 561 alltex 211
 os lb remove 562
-os lb copy 59 562
+os lb copy 1 562
 os blockprops 562 reset
-os lb edit 562 name #Turquoise Tile-E
-os lb edit 562 shape 0
-os lb edit 562 collide 0
-os lb edit 562 min 15 0 0
-os lb edit 562 blockslight no
-os blockprops 562 lavakills
-os lb edit 562 fallback 0
+os lb edit 562 name Purpur Pillar
+os lb edit 562 alltex 212
+os lb edit 562 sidetex 213
+os lb remove 563
+os lb copy 1 563
+os blockprops 563 reset
+os lb edit 563 name Chiseled Quartz Block
+os lb edit 563 alltex 214
+os lb edit 563 sidetex 215
+os lb remove 564
+os lb copy 1 564
+os blockprops 564 reset
+os lb edit 564 name Quartz Block
+os lb edit 564 alltex 216
+os lb remove 565
+os lb copy 1 565
+os blockprops 565 reset
+os lb edit 565 name Redstone Block
+os lb edit 565 alltex 217
+os lb remove 566
+os lb copy 1 566
+os blockprops 566 reset
+os lb edit 566 name Redstone Ore
+os lb edit 566 alltex 218
+os lb remove 567
+os lb copy 1 567
+os blockprops 567 reset
+os lb edit 567 name Andesite
+os lb edit 567 alltex 219
+os lb remove 568
+os lb copy 1 568
+os blockprops 568 reset
+os lb edit 568 name Diorite
+os lb edit 568 alltex 220
+os lb remove 569
+os lb copy 1 569
+os blockprops 569 reset
+os lb edit 569 name Granite
+os lb edit 569 alltex 221
+os lb remove 570
+os lb copy 1 570
+os blockprops 570 reset
+os lb edit 570 name Polished Andesite
+os lb edit 570 alltex 222
+os lb remove 571
+os lb copy 1 571
+os blockprops 571 reset
+os lb edit 571 name Polished Diorite
+os lb edit 571 alltex 223
+os lb remove 572
+os lb copy 1 572
+os blockprops 572 reset
+os lb edit 572 name Polished Granite
+os lb edit 572 alltex 224
+os lb remove 573
+os lb copy 39 573
+os blockprops 573 reset
+os lb edit 573 name Ruby
+os lb edit 573 alltex 225
+os lb edit 573 sound 4
+os lb remove 574
+os lb copy 12 574
+os blockprops 574 reset
+os lb edit 574 name Soul Sand
+os lb edit 574 alltex 226
+os lb remove 575
+os lb copy 12 575
+os blockprops 575 reset
+os lb edit 575 name Red Sand
+os lb edit 575 alltex 227
+os lb remove 576
+os lb copy 1 576
+os blockprops 576 reset
+os lb edit 576 name Chiseled Red Sandstone
+os lb edit 576 toptex 228
+os lb edit 576 bottomtex 229
+os lb edit 576 sidetex 230
+os lb remove 577
+os lb copy 1 577
+os blockprops 577 reset
+os lb edit 577 name Cut Red Sandstone
+os lb edit 577 toptex 228
+os lb edit 577 bottomtex 229
+os lb edit 577 sidetex 231
+os lb remove 578
+os lb copy 1 578
+os blockprops 578 reset
+os lb edit 578 name Red Sandstone
+os lb edit 578 toptex 228
+os lb edit 578 bottomtex 229
+os lb edit 578 sidetex 232
+os lb remove 579
+os lb copy 1 579
+os blockprops 579 reset
+os lb edit 579 name Chiseled Sandstone
+os lb edit 579 toptex 25
+os lb edit 579 bottomtex 57
+os lb edit 579 sidetex 233
+os lb remove 580
+os lb copy 1 580
+os blockprops 580 reset
+os lb edit 580 name Cut Sandstone
+os lb edit 580 toptex 25
+os lb edit 580 bottomtex 57
+os lb edit 580 sidetex 234
+os lb remove 581
+os lb copy 62 581
+os blockprops 581 reset
+os lb edit 581 name Sea Lantern
+os lb edit 581 alltex 235
+os lb remove 582
+os lb copy 20 582
+os blockprops 582 reset
+os lb edit 582 name Shulker Box
+os lb edit 582 alltex 236
+os lb remove 583
+os lb copy 20 583
+os blockprops 583 reset
+os lb edit 583 name Slime Block
+os lb edit 583 alltex 237
+os lb remove 584
+os lb copy 20 584
+os blockprops 584 reset
+os lb edit 584 name Spawner
+os lb edit 584 alltex 238
+os lb remove 585
+os lb copy 1 585
+os blockprops 585 reset
+os lb edit 585 name Chiseled Stone Bricks
+os lb edit 585 alltex 239
+os lb remove 586
+os lb copy 39 586
+os blockprops 586 reset
+os lb edit 586 name Torch
+os lb edit 586 alltex 240
+os lb edit 586 sound 1
+os lb remove 587
+os lb copy 42 587
+os blockprops 587 reset
+os lb edit 587 name Iron Trapdoor
+os lb edit 587 alltex 241
+os lb edit 587 sidetex 163
+os lb edit 587 max 16 1 16
+os lb edit 587 min 0 0 0
+os lb edit 587 draw 2
+os lb edit 587 blockslight 0
+os blockprops 587 door
+os lb remove 588
+os lb copy 5 588
+os blockprops 588 reset
+os lb edit 588 name Oak Trapdoor
+os lb edit 588 alltex 242
+os lb edit 588 sidetex 4
+os lb edit 588 max 16 1 16
+os lb edit 588 min 0 0 0
+os lb edit 588 draw 2
+os lb edit 588 blockslight 0
+os blockprops 588 door
+os blockprops 588 lavakills
+os lb remove 589
+os lb copy 5 589
+os blockprops 589 reset
+os lb edit 589 name Vine-N
+os lb edit 589 name #Vine-N
+os lb edit 589 alltex 243
+os lb edit 589 draw 2
+os lb edit 589 collide 7
+os blockprops 589 lavakills
+os lb edit 589 blockslight 0
+os lb edit 589 max 15 16 1
+os lb edit 589 min 1 0 0
+os lb remove 590
+os lb copy 5 590
+os blockprops 590 reset
+os lb edit 590 name Vine-S
+os lb edit 590 name #Vine-S
+os lb edit 590 alltex 243
+os lb edit 590 draw 2
+os lb edit 590 collide 7
+os blockprops 590 lavakills
+os lb edit 590 blockslight 0
+os lb edit 590 max 15 16 16
+os lb edit 590 min 1 0 15
+os lb remove 591
+os lb copy 5 591
+os blockprops 591 reset
+os lb edit 591 name Vine-W
+os lb edit 591 name #Vine-W
+os lb edit 591 alltex 243
+os lb edit 591 draw 2
+os lb edit 591 collide 7
+os blockprops 591 lavakills
+os lb edit 591 blockslight 0
+os lb edit 591 max 1 16 15
+os lb edit 591 min 0 0 1
+os lb remove 592
+os lb copy 5 592
+os blockprops 592 reset
+os lb edit 592 name Vine-E
+os lb edit 592 name #Vine-E
+os lb edit 592 alltex 243
+os lb edit 592 draw 2
+os lb edit 592 collide 7
+os blockprops 592 lavakills
+os lb edit 592 blockslight 0
+os lb edit 592 max 16 16 15
+os lb edit 592 min 15 0 1
+os lb remove 593
+os lb copy 9 593
+os blockprops 593 reset
+os lb edit 593 name Water Flow
+os lb edit 593 alltex 119
+os lb remove 594
+os lb copy 19 594
+os blockprops 594 reset
+os lb edit 594 name Wet Sponge
+os lb edit 594 alltex 244
 os lb remove 20
 os lb remove 113
-os lb remove 211-255
-os lb remove 319-320
-os lb remove 375-380
-os lb remove 402-457
-os lb remove 563-751
+os lb remove 253-255
+os lb remove 319-380
+os lb remove 402-430
+os lb remove 595-767

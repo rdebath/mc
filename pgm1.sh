@@ -3,6 +3,6 @@ mkdir -p zip
 echo '*' > zip/.gitignore
 
 for i in texpack/*.zip
-do j=$(md5sum $i| awk '{print substr($1,1,8);}' )
+do j=$(unzip -c "$i" | md5sum | awk '{print substr($1,1,8);}' )
 ln -f "$i" zip/"$j".zip
 done

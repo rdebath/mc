@@ -11,7 +11,7 @@ The rest is texture packs.
 !
 
 for i in texpack/*.zip
-do j=$(md5sum $i| awk '{print substr($1,1,8);}' )
+do j=$(unzip -c "$i" | md5sum | awk '{print substr($1,1,8);}' )
 echo "$(echo "$i"|sed 's/.*texpack-//')" https://raw.githubusercontent.com/rdebath/mc/zip/"$j".zip
 done |
 sort |

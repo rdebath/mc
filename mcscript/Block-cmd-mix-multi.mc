@@ -1,4 +1,4 @@
-os map texture https://raw.githubusercontent.com/rdebath/mc/zip/3593f82f.zip
+os map texture https://raw.githubusercontent.com/rdebath/mc/zip/e8cf16d6.zip
 os lb remove 1
 os blockprops 1 reset
 os lb remove 2
@@ -563,6 +563,8 @@ os lb copy 20 112
 os blockprops 112 reset
 os lb edit 112 name Barrier Visible
 os lb edit 112 alltex 122
+os lb copy 8 8
+os lb edit 8 alltex 123
 os lb remove 114
 os lb copy 1 114
 os blockprops 114 reset
@@ -5809,10 +5811,254 @@ os lb edit 703 min 8 8 0
 os lb edit 703 blockslight no
 os blockprops 703 lavakills
 os lb edit 703 fallback 0
+os lb remove 319
+os lb copy 2 319
+os blockprops 319 reset
+os lb edit 319 name Grass birchforest
+os lb edit 319 toptex 128
+os lb edit 319 bottomtex 2
+os lb edit 319 sidetex 129
+os lb remove 320
+os lb copy 5 320
+os blockprops 320 reset
+os lb edit 320 name Birch Log
+os lb edit 320 alltex 130
+os lb edit 320 sidetex 131
+os blockprops 320 lavakills
+os lb remove 375
+os lb copy 18 375
+os blockprops 375 reset
+os lb edit 375 name Birch Leaves
+os lb edit 375 alltex 132
+os blockprops 375 lavakills
+os lb remove 376
+os lb copy 5 376
+os blockprops 376 reset
+os lb edit 376 name Birch Planks
+os lb edit 376 alltex 133
+os blockprops 376 lavakills
+os lb remove 377
+os lb copy 39 377
+os blockprops 377 reset
+os lb edit 377 name Birch Sapling
+os lb edit 377 alltex 134
+os lb edit 377 sound 3
+os blockprops 377 waterkills
+os blockprops 377 lavakills
+os lb remove 378
+os lb copy 2 378
+os blockprops 378 reset
+os lb edit 378 name Grass spruceforest
+os lb edit 378 toptex 135
+os lb edit 378 bottomtex 2
+os lb edit 378 sidetex 136
+os lb remove 379
+os lb copy 5 379
+os blockprops 379 reset
+os lb edit 379 name Spruce Log
+os lb edit 379 alltex 137
+os lb edit 379 sidetex 138
+os blockprops 379 lavakills
+os lb remove 380
+os lb copy 18 380
+os blockprops 380 reset
+os lb edit 380 name Spruce Leaves
+os lb edit 380 alltex 139
+os blockprops 380 lavakills
+os lb remove 402
+os lb copy 5 402
+os blockprops 402 reset
+os lb edit 402 name Spruce Planks
+os lb edit 402 alltex 140
+os blockprops 402 lavakills
+os lb remove 403
+os lb copy 39 403
+os blockprops 403 reset
+os lb edit 403 name Spruce Sapling
+os lb edit 403 alltex 141
+os lb edit 403 sound 3
+os blockprops 403 waterkills
+os blockprops 403 lavakills
+os lb remove 404
+os lb copy 2 404
+os blockprops 404 reset
+os lb edit 404 name Grass darkforest
+os lb edit 404 toptex 142
+os lb edit 404 bottomtex 2
+os lb edit 404 sidetex 143
+os lb remove 405
+os lb copy 5 405
+os blockprops 405 reset
+os lb edit 405 name Dark Oak Log
+os lb edit 405 alltex 144
+os lb edit 405 sidetex 145
+os blockprops 405 lavakills
+os lb remove 406
+os lb copy 18 406
+os blockprops 406 reset
+os lb edit 406 name Dark Oak Leaves
+os lb edit 406 alltex 146
+os blockprops 406 lavakills
+os lb remove 407
+os lb copy 5 407
+os blockprops 407 reset
+os lb edit 407 name Dark Oak Planks
+os lb edit 407 alltex 147
+os blockprops 407 lavakills
+os lb remove 408
+os lb copy 39 408
+os blockprops 408 reset
+os lb edit 408 name Dark Oak Sapling
+os lb edit 408 alltex 148
+os lb edit 408 sound 3
+os blockprops 408 waterkills
+os blockprops 408 lavakills
+os lb remove 409
+os lb copy 2 409
+os blockprops 409 reset
+os lb edit 409 name Grass jungle
+os lb edit 409 toptex 149
+os lb edit 409 bottomtex 2
+os lb edit 409 sidetex 150
+os lb remove 410
+os lb copy 5 410
+os blockprops 410 reset
+os lb edit 410 name Jungle Log
+os lb edit 410 alltex 151
+os lb edit 410 sidetex 152
+os blockprops 410 lavakills
+os lb remove 411
+os lb copy 18 411
+os blockprops 411 reset
+os lb edit 411 name Jungle Leaves
+os lb edit 411 alltex 153
+os blockprops 411 lavakills
+os lb remove 412
+os lb copy 5 412
+os blockprops 412 reset
+os lb edit 412 name Jungle Planks
+os lb edit 412 alltex 154
+os blockprops 412 lavakills
+os lb remove 413
+os lb copy 39 413
+os blockprops 413 reset
+os lb edit 413 name Jungle Sapling
+os lb edit 413 alltex 155
+os lb edit 413 sound 3
+os blockprops 413 waterkills
+os blockprops 413 lavakills
+os lb remove 414
+os lb copy 2 414
+os blockprops 414 reset
+os lb edit 414 name Crimson Nylium
+os lb edit 414 toptex 156
+os lb edit 414 bottomtex 157
+os lb edit 414 sidetex 158
+os lb remove 415
+os lb copy 5 415
+os blockprops 415 reset
+os lb edit 415 name Crimson Stem
+os lb edit 415 alltex 159
+os lb edit 415 sidetex 160
+os lb remove 416
+os lb copy 18 416
+os blockprops 416 reset
+os lb edit 416 name Crimson Leaves
+os lb edit 416 alltex 161
+os blockprops 416 lavakills
+os lb remove 417
+os lb copy 5 417
+os blockprops 417 reset
+os lb edit 417 name Crimson Planks
+os lb edit 417 alltex 162
+os blockprops 417 lavakills
+os lb remove 418
+os lb copy 39 418
+os blockprops 418 reset
+os lb edit 418 name Crimson Fungus
+os lb edit 418 alltex 163
+os lb edit 418 sound 3
+os blockprops 418 waterkills
+os blockprops 418 lavakills
+os lb remove 419
+os lb copy 2 419
+os blockprops 419 reset
+os lb edit 419 name Warped Nylium
+os lb edit 419 toptex 164
+os lb edit 419 bottomtex 157
+os lb edit 419 sidetex 165
+os lb remove 420
+os lb copy 5 420
+os blockprops 420 reset
+os lb edit 420 name Warped Stem
+os lb edit 420 alltex 166
+os lb edit 420 sidetex 167
+os lb remove 421
+os lb copy 18 421
+os blockprops 421 reset
+os lb edit 421 name Warped Leaves
+os lb edit 421 alltex 168
+os blockprops 421 lavakills
+os lb remove 422
+os lb copy 5 422
+os blockprops 422 reset
+os lb edit 422 name Warped Planks
+os lb edit 422 alltex 169
+os blockprops 422 lavakills
+os lb remove 423
+os lb copy 39 423
+os blockprops 423 reset
+os lb edit 423 name Warped Fungus
+os lb edit 423 alltex 170
+os lb edit 423 sound 3
+os blockprops 423 waterkills
+os blockprops 423 lavakills
+os lb remove 424
+os lb copy 1 424
+os blockprops 424 reset
+os lb edit 424 name Netherrack
+os lb edit 424 alltex 157
+os lb remove 425
+os lb copy 12 425
+os blockprops 425 reset
+os lb edit 425 name Red Sand
+os lb edit 425 alltex 171
+os lb remove 426
+os lb copy 1 426
+os blockprops 426 reset
+os lb edit 426 name Red Sandstone
+os lb edit 426 toptex 172
+os lb edit 426 bottomtex 173
+os lb edit 426 sidetex 174
+os lb remove 427
+os lb copy 1 427
+os blockprops 427 reset
+os lb edit 427 name Nether Bricks
+os lb edit 427 alltex 175
+os lb remove 428
+os lb copy 37 428
+os blockprops 428 reset
+os lb edit 428 name Wither Rose
+os lb edit 428 alltex 176
+os lb edit 428 sound 3
+os blockprops 428 waterkills
+os blockprops 428 lavakills
+os lb remove 429
+os lb copy 1 429
+os blockprops 429 reset
+os lb edit 429 name Nether Gold Ore
+os lb edit 429 alltex 177
+os lb remove 430
+os lb copy 1 430
+os blockprops 430 reset
+os lb edit 430 name Polished Blackstone
+os lb edit 430 alltex 178
+os lb remove 704
+os lb copy 1 704
+os blockprops 704 reset
+os lb edit 704 name Polished Blackstone Bricks
+os lb edit 704 alltex 179
 os lb remove 20
 os lb remove 113
 os lb remove 253-255
-os lb remove 319-320
-os lb remove 375-380
-os lb remove 402-430
-os lb remove 704-751
+os lb remove 705-751

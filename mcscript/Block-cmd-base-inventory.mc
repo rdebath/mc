@@ -1,4 +1,4 @@
-os map texture https://raw.githubusercontent.com/rdebath/mc/zip/3556f517.zip
+os map texture https://raw.githubusercontent.com/rdebath/mc/zip/2743c415.zip
 os lb remove 1
 os blockprops 1 reset
 os lb remove 2
