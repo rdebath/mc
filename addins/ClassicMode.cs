@@ -44,7 +44,7 @@ namespace Core {
             if (Enabled) return;
 
             if (!p.hasCpe)
-                failreason = "enhanced mode.";
+                failreason = "classic protocol extensions";
             else if (!p.Supports(CpeExt.CustomBlocks))
                 failreason = "custom blocks";
             else if (!p.Supports(CpeExt.BlockDefinitions))
@@ -58,6 +58,11 @@ namespace Core {
 
             if (failreason != "") {
                 Logger.Log(LogType.UserActivity, "{0} in Classic Mode.", p.name);
+
+                ItemPerms opchat = Chat.OpchatPerms;
+                Chat.MessageFrom(p, "λNICK &Sis connecting with a classic client",
+                    (pl, obj) => pl.CanSee(p) && opchat.UsableBy(pl.Rank));
+
                 if (ClassicMap == "") {
                     p.Leave("Please use a client supporting " + failreason, true);
                     p.cancelconnecting = true;
@@ -66,6 +71,8 @@ namespace Core {
                     if (lvl != null) {
                         p.level = lvl;
                     }
+                    p.Message("You should connect using a client with {0} (e.g. ClassiCube in enhanced mode)", failreason);
+
                 }
             }
         }
