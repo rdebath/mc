@@ -1,0 +1,69 @@
+commit 1fc4f0ff467d1a9c11514b0537d99eb093f7129d
+Author: Robert de Bath <rdebath@tvisiontech.co.uk>
+Date:   Thu Jun 24 19:12:56 2021 +0100
+
+    Ignore server "hack" controls
+
+diff --git a/src/Chat.c b/src/Chat.c
+index c898bf9b6..f35f59a9e 100644
+--- a/src/Chat.c
++++ b/src/Chat.c
+@@ -639,7 +639,7 @@ static void TeleportCommand_Execute(const cc_string* args, int argsCount) {
+ 
+ static struct ChatCommand TeleportCommand = {
+ 	"TP", TeleportCommand_Execute,
+-	COMMAND_FLAG_SINGLEPLAYER_ONLY,
++	/*COMMAND_FLAG_SINGLEPLAYER_ONLY*/ 0,
+ 	{
+ 		"&a/client tp [x y z]",
+ 		"&eMoves you to the given coordinates.",
+diff --git a/src/Protocol.c b/src/Protocol.c
+index 849c4f762..a70be6a61 100644
+--- a/src/Protocol.c
++++ b/src/Protocol.c
+@@ -30,6 +30,10 @@
+ #include "Input.h"
+ #include "Utils.h"
+ 
++#ifndef HACKEDCLIENT
++#define HACKEDCLIENT(x)
++#endif /*HACKEDCLIENT*/
++
+ #define QUOTE(x) #x
+ #define STRINGIFY(val) QUOTE(val)
+ struct _ProtocolData Protocol;
+@@ -394,6 +398,8 @@ static void Classic_Handshake(cc_uint8* data) {
+ 	
+ 	String_Copy(&hacks->HacksFlags,         &Server.Name);
+ 	String_AppendString(&hacks->HacksFlags, &Server.MOTD);
++
++	HACKEDCLIENT(return);
+ 	HacksComp_RecheckFlags(hacks);
+ }
+ 
+@@ -683,6 +689,8 @@ static void Classic_Kick(cc_uint8* data) {
+ static void Classic_SetPermission(cc_uint8* data) {
+ 	struct HacksComp* hacks = &LocalPlayer_Instance.Hacks;
+ 	UpdateUserType(hacks, data[0]);
++
++	HACKEDCLIENT(return);
+ 	HacksComp_RecheckFlags(hacks);
+ }
+ 
+@@ -1127,6 +1135,8 @@ static void CPE_HackControl(cc_uint8* data) {
+ 	struct LocalPlayer* p = &LocalPlayer_Instance;
+ 	int jumpHeight;
+ 
++	HACKEDCLIENT(return);
++
+ 	p->Hacks.CanFly            = data[0] != 0;
+ 	p->Hacks.CanNoclip         = data[1] != 0;
+ 	p->Hacks.CanSpeed          = data[2] != 0;
+@@ -1234,6 +1244,7 @@ static void CPE_SetMapEnvProperty(cc_uint8* data) {
+ 	case 3:
+ 		Env_SetCloudsHeight(value); break;
+ 	case 4:
++		HACKEDCLIENT(return);
+ 		Math_Clamp(value, -0x7FFF, 0x7FFF);
+ 		Game_MaxViewDistance = value <= 0 ? DEFAULT_MAX_VIEWDIST : value;
+ 		Game_SetViewDistance(Game_UserViewDistance); break;
