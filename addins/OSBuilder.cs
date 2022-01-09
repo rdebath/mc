@@ -23,7 +23,10 @@ namespace MCGalaxy {
 
 		void DoPromotePlayer(Player p, Level prevLevel, Level level, ref bool announce) {
             if (p.Rank != LevelPermission.Guest) return;
-            if (!LevelInfo.IsRealmOwner(level, p.name)) return;
+            if (!LevelInfo.IsRealmOwner(level, p.name)) {
+                if (!level.Config.MOTD.Contains("+builder"))
+                    return;
+            }
 
             Group curRank = PlayerInfo.GetGroup(p.name);
             Group newRank = Group.Find(LevelPermission.Builder);
