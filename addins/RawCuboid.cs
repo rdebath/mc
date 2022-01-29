@@ -734,7 +734,7 @@ namespace MCGalaxy
         }
 
         bool DoTextureCmd(Player p, Level lvl, string[] parts, int pno, bool buffered = true) {
-            if (parts[pno] == "") {
+            if (parts[pno] == "" || parts[pno] == "reset") {
                 if (lvl.Config.Terrain == "" && lvl.Config.TexturePack == "") return true;
                 lvl.Config.Terrain = "";
                 lvl.Config.TexturePack = "";
@@ -760,6 +760,7 @@ namespace MCGalaxy
                 }
             }
             UpdateAllPlayersTexture(lvl);
+            Save_Settings = true;
             return true;
         }
 

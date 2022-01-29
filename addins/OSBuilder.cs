@@ -4,24 +4,24 @@ using MCGalaxy.Events.PlayerEvents;
 
 namespace MCGalaxy {
 
-	public class OsBuilderPlugin : Plugin {
-		public override string creator { get { return "Not UnknownShadow200"; } }
-		public override string MCGalaxy_Version { get { return "1.9.1.4"; } }
-		public override string name { get { return "OsBuilderPlugin"; } }
-		
-		public override void Load(bool startup) {
-			OnJoiningLevelEvent.Register(DoDemoteAfterLevel, Priority.Low);
-			OnJoinedLevelEvent.Register(DoPromotePlayer, Priority.Low);
-            OnPlayerConnectEvent.Register(DoDemotePlayer, Priority.Low);
-		}
-		
-		public override void Unload(bool shutdown) {
-			OnJoiningLevelEvent.Unregister(DoDemoteAfterLevel);
-			OnJoinedLevelEvent.Unregister(DoPromotePlayer);
-            OnPlayerConnectEvent.Unregister(DoDemotePlayer);
-		}
+    public class OsBuilderPlugin : Plugin {
+        public override string creator { get { return "Not UnknownShadow200"; } }
+        public override string MCGalaxy_Version { get { return "1.9.1.4"; } }
+        public override string name { get { return "OsBuilderPlugin"; } }
 
-		void DoPromotePlayer(Player p, Level prevLevel, Level level, ref bool announce) {
+        public override void Load(bool startup) {
+            OnJoiningLevelEvent.Register(DoDemoteAfterLevel, Priority.Low);
+            OnJoinedLevelEvent.Register(DoPromotePlayer, Priority.Low);
+            OnPlayerConnectEvent.Register(DoDemotePlayer, Priority.Low);
+        }
+
+        public override void Unload(bool shutdown) {
+            OnJoiningLevelEvent.Unregister(DoDemoteAfterLevel);
+            OnJoinedLevelEvent.Unregister(DoPromotePlayer);
+            OnPlayerConnectEvent.Unregister(DoDemotePlayer);
+        }
+
+        void DoPromotePlayer(Player p, Level prevLevel, Level level, ref bool announce) {
             if (p.Rank != LevelPermission.Guest) return;
             if (!LevelInfo.IsRealmOwner(level, p.name)) {
                 if (!level.Config.MOTD.Contains("+builder"))
@@ -39,13 +39,13 @@ namespace MCGalaxy {
             //action.Announce = false;
             OnModActionEvent.Call(action);
 
-		}
+        }
 
-		void DoDemoteAfterLevel(Player p, Level lvl, ref bool canJoin) {
+        void DoDemoteAfterLevel(Player p, Level lvl, ref bool canJoin) {
             DoDemotePlayer(p);
         }
 
-		void DoDemotePlayer(Player p) {
+        void DoDemotePlayer(Player p) {
             if (p.Rank != LevelPermission.Builder) return;
 
             Group curRank = PlayerInfo.GetGroup(p.name);
@@ -56,7 +56,7 @@ namespace MCGalaxy {
             action.Metadata = newRank;
             action.Announce = false;
             OnModActionEvent.Call(action);
-		}
+        }
 
-	}
+    }
 }
