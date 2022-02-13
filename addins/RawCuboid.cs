@@ -310,7 +310,7 @@ namespace MCGalaxy
                 Save_Props = false;
                 Save_Settings = false;
 
-                if (parts.Length > 999)
+                if (parts.Length > 5000)
                     Buffering = false; // Don't bother even trying
 
                 int argno = 1;

@@ -1,8 +1,24 @@
-commit 1fc4f0ff467d1a9c11514b0537d99eb093f7129d
+commit d916cc2db3bbfa566d85141ec5a6683c4003537f (HEAD -> classicube)
 Author: Robert de Bath <rdebath@tvisiontech.co.uk>
 Date:   Thu Jun 24 19:12:56 2021 +0100
 
     Ignore server "hack" controls
+    
+    Hack packet for noclip and fly.
+    Max fog range.
+    Client teleport.
+    Block permissions.
+    
+    Note: This defaults to not installed unless HACKEDCLIENT
+    defined as this before the top of the file (ie: Protocol.c Server.c)
+    
+        #define HACKEDCLIENT(x) x
+    
+    or on the commands line this option is added:
+    
+        -D'HACKEDCLIENT(x)=x'
+    
+    The "/client tp" is always available.
 
 diff --git a/src/Chat.c b/src/Chat.c
 index c898bf9b6..f35f59a9e 100644
@@ -18,7 +34,7 @@ index c898bf9b6..f35f59a9e 100644
  		"&a/client tp [x y z]",
  		"&eMoves you to the given coordinates.",
 diff --git a/src/Protocol.c b/src/Protocol.c
-index 849c4f762..a70be6a61 100644
+index 199983d9c..d31be9236 100644
 --- a/src/Protocol.c
 +++ b/src/Protocol.c
 @@ -30,6 +30,10 @@
@@ -32,7 +48,7 @@ index 849c4f762..a70be6a61 100644
  #define QUOTE(x) #x
  #define STRINGIFY(val) QUOTE(val)
  struct _ProtocolData Protocol;
-@@ -394,6 +398,8 @@ static void Classic_Handshake(cc_uint8* data) {
+@@ -399,6 +403,8 @@ static void Classic_Handshake(cc_uint8* data) {
  	
  	String_Copy(&hacks->HacksFlags,         &Server.Name);
  	String_AppendString(&hacks->HacksFlags, &Server.MOTD);
@@ -41,7 +57,7 @@ index 849c4f762..a70be6a61 100644
  	HacksComp_RecheckFlags(hacks);
  }
  
-@@ -683,6 +689,8 @@ static void Classic_Kick(cc_uint8* data) {
+@@ -688,6 +694,8 @@ static void Classic_Kick(cc_uint8* data) {
  static void Classic_SetPermission(cc_uint8* data) {
  	struct HacksComp* hacks = &LocalPlayer_Instance.Hacks;
  	UpdateUserType(hacks, data[0]);
@@ -50,7 +66,16 @@ index 849c4f762..a70be6a61 100644
  	HacksComp_RecheckFlags(hacks);
  }
  
-@@ -1127,6 +1135,8 @@ static void CPE_HackControl(cc_uint8* data) {
+@@ -1111,6 +1119,8 @@ static void CPE_SetBlockPermission(cc_uint8* data) {
+ 	BlockID block; 
+ 	ReadBlock(data, block);
+ 
++	HACKEDCLIENT(return);
++
+ 	Blocks.CanPlace[block]  = *data++ != 0;
+ 	Blocks.CanDelete[block] = *data++ != 0;
+ 	Event_RaiseVoid(&BlockEvents.PermissionsChanged);
+@@ -1149,6 +1159,8 @@ static void CPE_HackControl(cc_uint8* data) {
  	struct LocalPlayer* p = &LocalPlayer_Instance;
  	int jumpHeight;
  
@@ -59,7 +84,7 @@ index 849c4f762..a70be6a61 100644
  	p->Hacks.CanFly            = data[0] != 0;
  	p->Hacks.CanNoclip         = data[1] != 0;
  	p->Hacks.CanSpeed          = data[2] != 0;
-@@ -1234,6 +1244,7 @@ static void CPE_SetMapEnvProperty(cc_uint8* data) {
+@@ -1256,6 +1268,7 @@ static void CPE_SetMapEnvProperty(cc_uint8* data) {
  	case 3:
  		Env_SetCloudsHeight(value); break;
  	case 4:
@@ -67,3 +92,42 @@ index 849c4f762..a70be6a61 100644
  		Math_Clamp(value, -0x7FFF, 0x7FFF);
  		Game_MaxViewDistance = value <= 0 ? DEFAULT_MAX_VIEWDIST : value;
  		Game_SetViewDistance(Game_UserViewDistance); break;
+@@ -1564,6 +1577,7 @@ static void CPE_Reset(void) {
+ 	cpe_needD3Fix = false; cpe_extEntityPos = false; cpe_twoWayPing = false; 
+ 	cpe_pluginMessages = false; cpe_extTextures = false; cpe_fastMap = false;
+ 	cpe_extBlocks = false; Game_UseCPEBlocks = false; cpe_blockPerms = false;
++	HACKEDCLIENT(Game_UseCPEBlocks = true);
+ 	if (!Game_UseCPE) return;
+ 
+ 	Net_Set(OPCODE_EXT_INFO, CPE_ExtInfo, 67);
+diff --git a/src/Server.c b/src/Server.c
+index 8ee65a153..5322728a9 100644
+--- a/src/Server.c
++++ b/src/Server.c
+@@ -25,6 +25,10 @@
+ #include "Input.h"
+ #include "Errors.h"
+ 
++#ifndef HACKEDCLIENT
++#define HACKEDCLIENT(x)
++#endif /*HACKEDCLIENT*/
++
+ static char nameBuffer[STRING_SIZE];
+ static char motdBuffer[STRING_SIZE];
+ static char appBuffer[STRING_SIZE];
+@@ -284,6 +288,7 @@ static void MPConnection_BeginConnect(void) {
+ 	cc_result res;
+ 	String_InitArray(title, titleBuffer);
+ 
++	HACKEDCLIENT(if(0){)
+ 	/* Default block permissions (in case server supports SetBlockPermissions but doesn't send) */
+ 	Blocks.CanPlace[BLOCK_AIR] = false;
+ 	Blocks.CanPlace[BLOCK_LAVA] = false;        Blocks.CanDelete[BLOCK_LAVA] = false;
+@@ -291,6 +296,7 @@ static void MPConnection_BeginConnect(void) {
+ 	Blocks.CanPlace[BLOCK_STILL_LAVA] = false;  Blocks.CanDelete[BLOCK_STILL_LAVA] = false;
+ 	Blocks.CanPlace[BLOCK_STILL_WATER] = false; Blocks.CanDelete[BLOCK_STILL_WATER] = false;
+ 	Blocks.CanPlace[BLOCK_BEDROCK] = false;     Blocks.CanDelete[BLOCK_BEDROCK] = false;
++	HACKEDCLIENT(})
+ 	
+ 	res = Socket_Connect(&net_socket, &Server.Address, Server.Port);
+ 	if (res == ERR_INVALID_ARGUMENT) {

@@ -22,6 +22,7 @@ namespace Core {
         public override void Load(bool startup) {
             Command.Register(new CmdClassicMode());
             OnPlayerFinishConnectingEvent.Register(CheckForEnhanced, Priority.High);
+            OnPlayerConnectEvent.Register(ComplainAboutClassic, Priority.Low);
 
             if (ClassicMap != "") {
                 Level lvl = LevelActions.Load(Player.Console, ClassicMap, false);
@@ -37,12 +38,12 @@ namespace Core {
         public override void Unload(bool shutdown) {
             Command.Unregister(Command.Find("ClassicMode"));
             OnPlayerFinishConnectingEvent.Unregister(CheckForEnhanced);
+            OnPlayerConnectEvent.Unregister(ComplainAboutClassic);
         }
 
-        void CheckForEnhanced(Player p) {
-            string failreason = "";
-            if (Enabled) return;
+        string IsFailed(Player p) {
 
+            string failreason = "";
             if (!p.hasCpe)
                 failreason = "classic protocol extensions";
             else if (!p.Supports(CpeExt.CustomBlocks))
@@ -55,6 +56,22 @@ namespace Core {
 #endif
             else if (!p.Supports(CpeExt.FullCP437) || !p.Supports(CpeExt.EmoteFix))
                 failreason = "working chat";
+
+            return failreason;
+        }
+
+        void ComplainAboutClassic(Player p) {
+            if (Enabled) return;
+            string failreason = IsFailed(p);
+
+            if (failreason != "") {
+                p.Message("You have been moved to level {1}, /main will get you to the real main level. You should connect using a client with {0} for correct operation. (e.g. ClassiCube in enhanced mode)", failreason, ClassicMap);
+            }
+        }
+
+        void CheckForEnhanced(Player p) {
+            if (Enabled) return;
+            string failreason = IsFailed(p);
 
             if (failreason != "") {
                 Logger.Log(LogType.UserActivity, "{0} in Classic Mode.", p.name);
@@ -70,9 +87,10 @@ namespace Core {
                     Level lvl = Matcher.FindLevels(p, ClassicMap);
                     if (lvl != null) {
                         p.level = lvl;
+                    } else {
+                        p.Leave("Please use a client supporting " + failreason, true);
+                        p.cancelconnecting = true;
                     }
-                    p.Message("You should connect using a client with {0} (e.g. ClassiCube in enhanced mode)", failreason);
-
                 }
             }
         }
