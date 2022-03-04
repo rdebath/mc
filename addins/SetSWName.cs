@@ -1,16 +1,26 @@
 using System;
+using System.IO;
+using System.Text;
 using MCGalaxy;
-
-// TODO: Save last setting to file.
 
 namespace Core {
     public class SetSWName : Plugin {
         public override string MCGalaxy_Version { get { return "1.8.0.0"; } }
         public override string name { get { return "SetSWName"; } }
+        public static string swnamefile = "text/swname.txt";
 
         public override void Load(bool startup) {
             Command.Register(new CmdSetSWName());
-            Server.SoftwareName = "MCClone";
+
+            Server.SoftwareName = "MCGalaxy-Fork";
+            try
+            {
+                if (File.Exists(swnamefile))
+                    Server.SoftwareName = File.ReadAllText(swnamefile, Encoding.UTF8);
+            }
+            catch(Exception e) { }
+            if (Server.SoftwareName == "")
+                Server.SoftwareName = "MCGalaxy-Fork";
         }
 
         public override void Unload(bool shutdown) {
@@ -25,6 +35,7 @@ namespace Core {
 
         public override void Use(Player p, string message) {
             Server.SoftwareName = message;
+            File.WriteAllText(SetSWName.swnamefile, message, Encoding.UTF8);
         }
 
         public override void Help(Player p) {

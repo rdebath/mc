@@ -4,6 +4,7 @@ using MCGalaxy.Events.PlayerEvents;
 using BlockID = System.UInt16;
 
 // First part of routine to disable the placing of flooding blocks.
+// TODO: /place, draw commands etc.
 
 namespace MCGalaxy {
 

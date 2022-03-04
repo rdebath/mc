@@ -1,8 +1,6 @@
 using System;
 using MCGalaxy;
 
-// TODO: Save last setting to file.
-
 namespace Core {
     public class PlugGC : Plugin {
         public override string MCGalaxy_Version { get { return "1.8.0.0"; } }
