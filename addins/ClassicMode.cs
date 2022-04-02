@@ -13,7 +13,7 @@ using MCGalaxy.Events.PlayerEvents;
 
 namespace Core {
     public class ClassicMode: Plugin {
-        public override string MCGalaxy_Version { get { return "1.8.0.0"; } }
+        public override string MCGalaxy_Version { get { return "1.9.3.9"; } }
         public override string name { get { return "ClassicMode"; } }
 
         public static bool Enabled = false;
@@ -44,7 +44,7 @@ namespace Core {
         string IsFailed(Player p) {
 
             string failreason = "";
-            if (!p.hasCpe)
+            if (!p.Session.hasCpe)
                 failreason = "classic protocol extensions";
             else if (!p.Supports(CpeExt.CustomBlocks))
                 failreason = "custom blocks";

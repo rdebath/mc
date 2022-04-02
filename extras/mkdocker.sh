@@ -79,8 +79,12 @@ main() {
     [ -d ClassiCube ] &&
 	git -C ClassiCube rev-parse --short HEAD > ClassiCube/.git-latest
 
+    [ -d MCGalaxy ] &&
+	git -C MCGalaxy describe --tags mcgalaxy/master HEAD | fmt | tr '-' ' ' |
+	    awk '{print $1 "-" $2 "-" $3 "+" ($5-$2);}' > MCGalaxy/.git-latest
+
     $BUILD "$@"
-    rm -f ClassiCube/.git-latest ||:
+    rm -f ClassiCube/.git-latest MCGalaxy/.git-latest ||:
     exit
 }
 
@@ -143,7 +147,7 @@ build_std() {
 
     if [ "$LOCALSOURCE" = yes ]
     then
-	DKF="$MC/_tmp$$"
+	DKF="/tmp/_tmp.dockerfile.$$"
 	mkdir -p "$DKF"
 	build "$0" > "$DKF"/Dockerfile
 	tar czf - --exclude=.git -C "$DKF" Dockerfile -C "$MC" \
@@ -612,7 +616,7 @@ COMMIT
 ARG SERVER
 # Match UID to your non-root user.
 ARG UID=1000
-RUN U=user ; useradd $U -u $UID -d /home/$U -m
+RUN U=user ; useradd $U -u $UID -d /home/$U -m -l
 WORKDIR /opt/classicube
 COPY --from=serversrc --chown=user:user /opt/classicube/${SERVER} /opt/classicube/${SERVER}
 RUN chown user:user .
@@ -641,6 +645,10 @@ sed -i '/CheckFile.*dll"/s/^/\/\/PATCH/' \
 sed -i '/"[A-Z][A-Za-z0-9]*_.dll");/s::Assembly.GetExecutingAssembly().Location); //PATCH:' \
     ${SERVER}/Scripting/Scripting.cs
 
+[ -f .git-latest ] &&
+    sed -i '/string fullName;/s:;: = "'"$SERVER $(cat .git-latest)"'"; //PATCH:' \
+      ${SERVER}/Server/Server.Fields.cs
+
 case "$COMPILE_FLAGS" in
 *TEN_BIT_BLOCKS* )
     echo >&2 "Using compile flags $COMPILE_FLAGS"
@@ -653,6 +661,7 @@ echo >&2 Patches applied ...
 grep //PATCH >&2 \
     CLI/Program.cs \
     ${SERVER}/Server/Server.cs \
+    ${SERVER}/Server/Server.Fields.cs \
     ${SERVER}/Scripting/Scripting.cs
 
 REL=/p:Configuration=Release
@@ -725,8 +734,7 @@ for f in \
     ${SERVER}_.dll ${SERVER}_.dll.config \
     MySql.Data.dll Newtonsoft.Json.dll \
     sqlite3_x32.dll sqlite3_x64.dll \
-    System.Data.SQLite.dll \
-    Updater.exe Updater.exe.config
+    System.Data.SQLite.dll
 
 do [ -e "bin/$BINDIR/$f" ] && { FILES="$FILES bin/$BINDIR/$f" ; continue ; }
    [ -e "$f" ] && { FILES="$FILES $f" ; continue ; }

@@ -12,15 +12,16 @@ namespace Core {
         public override void Load(bool startup) {
             Command.Register(new CmdSetSWName());
 
-            Server.SoftwareName = "MCGalaxy-Fork";
             try
             {
-                if (File.Exists(swnamefile))
-                    Server.SoftwareName = File.ReadAllText(swnamefile, Encoding.UTF8);
+                if (File.Exists(swnamefile)) {
+                    string[] lines =
+                        File.ReadAllLines(swnamefile, Encoding.UTF8);
+                    if (lines.Length > 0)
+                        Server.SoftwareNameVersioned = lines[0];
+                }
             }
             catch(Exception e) { }
-            if (Server.SoftwareName == "")
-                Server.SoftwareName = "MCGalaxy-Fork";
         }
 
         public override void Unload(bool shutdown) {
@@ -34,12 +35,13 @@ namespace Core {
         public override LevelPermission defaultRank { get { return LevelPermission.Nobody; } }
 
         public override void Use(Player p, string message) {
-            Server.SoftwareName = message;
+            message = message.Replace("%", "&");
+            Server.SoftwareNameVersioned = message;
             File.WriteAllText(SetSWName.swnamefile, message, Encoding.UTF8);
         }
 
         public override void Help(Player p) {
-            p.Message("%T/SetSWName - Set software name");
+            p.Message("%T/SetSWName - Set full software name");
         }
     }
 }

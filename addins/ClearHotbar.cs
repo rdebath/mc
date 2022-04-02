@@ -8,7 +8,7 @@ using MCGalaxy.Network;
 
 namespace Core {
     public class ClearHotBar: Plugin {
-        public override string MCGalaxy_Version { get { return "1.8.0.0"; } }
+        public override string MCGalaxy_Version { get { return "1.9.3.9"; } }
         public override string name { get { return "ClearHotBar"; } }
 
         public override void Load(bool startup) {
@@ -34,10 +34,10 @@ namespace Core {
         }
 
         public static void ClearHotbar(Player p) {
-            if (!p.hasCpe || !p.Supports(CpeExt.SetHotbar)) return;
+            if (!p.Session.hasCpe || !p.Supports(CpeExt.SetHotbar)) return;
 
             for (byte i = 0; i <= 9; i++) {
-                p.Send(Packet.SetHotbar(0, i, p.hasExtBlocks));
+                p.Send(Packet.SetHotbar(0, i, p.Session.hasExtBlocks));
             }
         }
     }

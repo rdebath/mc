@@ -39,7 +39,8 @@ CODE="$4"
     TOKEN=$(echo "$JSON1" | jq -r .token)
     USERNAME=$(echo "$JSON1" | jq -r .username)
 
-    [ "$AUTHD" = false ] && {
+    if [ "$AUTHD" = false ]
+    then
 	if [ "$PASS" != '' ]
 	then
 	    JSON2=$(
@@ -59,9 +60,18 @@ CODE="$4"
 
 	[ "$AUTHD" = false ] && {
 	    echo >&2 "Login failed ... $JSON2"
+	    rm -f "$COOKIES"/.cookie.$NICK ||:
+	    echo '?'
 	    exit 1
 	}
-    }
+	[ "$VERBOSE" = yes ] && {
+	    echo "$JSON2" | jq '.' >&2
+	}
+    else
+	[ "$VERBOSE" = yes ] && {
+	    echo "$JSON1" | jq '.' >&2
+	}
+    fi
 }
 
 TMP=/tmp/_tmp$$.txt
@@ -91,6 +101,7 @@ else
     [ "$(echo "$NAME" | wc -l)" -ne 1 ] && {
 	echo >&2 "Found records..."
 	echo "$NAME" | expand -64 >&2
+	echo '?'
 	exit 1
     }
 
@@ -111,6 +122,7 @@ else
     then
 	echo >&2 "Server not found: $SEARCH"
 	rm -f "$TMP"
+	echo '?'
 	exit 1
     fi
 

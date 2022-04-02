@@ -534,7 +534,7 @@ namespace MCGalaxy
             if (result == ChangeResult.VisuallySame) return;
 
             if (buffered && Buffering) {
-                lvl.blockqueue.Add(p, index, block);
+                lvl.blockqueue.Add(index, block);
             }
 
             if (Buffering && counter >= 10000) {
