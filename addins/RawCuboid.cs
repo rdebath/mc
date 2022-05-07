@@ -480,7 +480,8 @@ namespace MCGalaxy
                 if (BlockID.TryParse(input.Substring(1), out block)) {
                     if (block <= Block.MaxRaw) {
                         return Block.FromRaw(block);
-                    }
+                    } else if (block <= Block.MaxRaw+256)
+                        return (ushort)(block-Block.MaxRaw-1);
                 }
 
                 success = Block.Aliases.TryGetValue(input.ToLower().Substring(1), out coreID);

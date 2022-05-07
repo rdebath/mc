@@ -120,14 +120,14 @@ else
 
     if [ "$NAME" = '' ]&&[ "$HASH" = '' ]
     then
-	echo >&2 "Server not found: $SEARCH"
+	echo >&2 "Server not found: $SEARCH."
 	rm -f "$TMP"
 	echo '?'
 	exit 1
     fi
 
     [ "$NICK" != '' ] &&
-	echo >&2 "Using \"$NAME$HASH\""
+	echo >&2 "Using \"$NAME$HASH\"  "
 
     [ "$HASH" = '' ] &&
 	HASH=$( jq < "$TMP" -r '.servers[] | select(.name=="'"$NAME"'").hash')
@@ -155,4 +155,5 @@ esac
     else
 	echo "$JSON3" | jq -r '.servers[] | ["'"$USERNAME"' "+.mppass+" "+.ip+" "+(.port|tostring)] | @tsv '
     fi
+    echo "$JSON3" | jq -r '.servers[] | ["# "+.ip+":"+(.port|tostring)+" - '"$USERNAME"'/"+.mppass] | @tsv ' >&2
 }

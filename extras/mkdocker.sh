@@ -231,6 +231,7 @@ build_all_mono() {
 # This function takes this script and extracts the Dockerfile that follows
 # the line that starts with "DOCKERFILE". Any sections between a "BEGIN" and
 # "COMMIT" line are encoded using gzip and base64 into a "RUN" command.
+# NB: https://github.com/moby/moby/issues/34423
 build() {
 read -d '' -r SCRIPT<<'#EOS'||:
 BEGIN { # vim: set filetype=awk:
@@ -323,7 +324,7 @@ WORKDIR /opt/classicube
 # Do this first, it can be overwritten if it exists in the context.
 RUN [ -f default.zip ] || \
     wget --progress=dot:mega -O default.zip \
-        https://static.classicube.net/default.zip
+        http://www.classicube.net/static/default.zip
 
 # Recompress the png files ... hard.
 BEGIN
