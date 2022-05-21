@@ -11,7 +11,7 @@ esac
 [ "$(echo '"+"'|jq -r .)" != + ] && { echo>&2 "Please install 'jq'"; exit 1; }
 
 [ "$1" = '' ] && {
-    echo>&2 "Usage: $0 [-v] [-c] [ServerName_ipport_or_hash] [UserName] [Password] [MFACode]"
+    echo>&2 "Usage: $0 [-v] [-c] Host [UserName] [Password] [MFACode]"
     echo>&2 "The Password and Code are usually optional "
     echo>&2 "Omitting the username just lists matching hosts"
     echo>&2 "The host can be a regex to match against the server name or"
@@ -155,5 +155,7 @@ esac
     else
 	echo "$JSON3" | jq -r '.servers[] | ["'"$USERNAME"' "+.mppass+" "+.ip+" "+(.port|tostring)] | @tsv '
     fi
-    echo "$JSON3" | jq -r '.servers[] | ["# "+.ip+":"+(.port|tostring)+" - '"$USERNAME"'/"+.mppass] | @tsv ' >&2
+    [ -t 2 ] && {
+	echo "$JSON3" | jq -r '.servers[] | ["# "+.ip+":"+(.port|tostring)+" - '"$USERNAME"'/"+.mppass] | @tsv ' >&2
+    }
 }

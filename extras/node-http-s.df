@@ -1,0 +1,9 @@
+FROM node:lts-slim
+RUN npm install -g http-server &&\
+    mkdir -p -m 755 /html &&\
+    chown node:node /html
+USER node
+WORKDIR /html
+EXPOSE 8080
+CMD ["http-server", "/html", "--port", "8080", "--cors"] 
+

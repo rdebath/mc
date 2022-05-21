@@ -532,7 +532,7 @@ BEGIN
 export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=Shut_the_fuck_up
 set -x
 set_packages() {
-    PKGS="unzip tini wget curl sqlite3 mini-httpd rlwrap screen ca-certificates"
+    PKGS="unzip tini wget curl sqlite3 rlwrap screen ca-certificates"
     # If mono is already installed use that version
     [ -x /usr/bin/mono ] && return
 
@@ -802,7 +802,6 @@ export PREFIX="$O/lib"
     } 2>/dev/null |
     mono $MONOOPTS "$PREFIX"/${SERVER}CLI.exe |
     cut -b1-320
-    kill -9 "$HTTPID"
     exit
 }
 
@@ -816,16 +815,11 @@ export PREFIX="$O/lib"
 [ -f "$O"/lib/${SERVER}_.dll.so ] &&
     echo "($(date +%T)) AOT compiled version is in use."
 
-# Startup the web server.
+# Populate the webclient dir
 [ -d "$O"/client ] && {
     mkdir -p webclient
     cp -a "$O"/client/. webclient/.
     cp -p "$O"/default.zip webclient/.
-    /usr/sbin/mini_httpd -D 2>>/home/user/web.log \
-	-p 8080 \
-	-d /home/user/webclient \
-	-c \*.jsp &
-    HTTPID=$!
 }
 
 # Work around docker bug. (tty size is updated late)
@@ -855,7 +849,6 @@ mkfifo toserver ||:
 #
 # Also: Mono tries to be evil to the tty, rlwrap is easily confused.
 
-export HTTPID
 if [ "$$" = 1 ]
 then exec /usr/bin/tini rlwrap -- -a -t dumb sh "$O"/start_server rcmd
 else exec rlwrap -a -t dumb sh "$O"/start_server rcmd
