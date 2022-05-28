@@ -39,6 +39,7 @@ int msgsize[256] = {
     /* 0x0f */ 2,		/* SetOP */
 };
 
+#define World_Pack(x, y, z) (((y) * cells_z + (z)) * cells_x + (x))
 uint8_t * map_blocks = 0;
 uint16_t cells_x, cells_y, cells_z;
 int map_len = 0;
@@ -86,7 +87,7 @@ int init_connection(int argc , char *argv[]) {
 	fprintf(stderr, "Could not resolve host '%s'\n", host);
 	exit(1);
     }
-    
+
     socket_desc = socket(AF_INET , SOCK_STREAM , 0);
 
     memcpy(&server.sin_addr, hostaddr->h_addr_list[0], hostaddr->h_length);
@@ -97,8 +98,6 @@ int init_connection(int argc , char *argv[]) {
 	perror("Connection failed");
 	exit(1);
     }
-
-    puts("Connected");
 
     uint8_t wbuffer[256];
 
@@ -116,7 +115,7 @@ int
 process_connection(int socket_desc)
 {
     uint8_t wbuffer[256];
-    uint8_t buffer[8192*32];
+    uint8_t buffer[8192];
     int total = 0;
     int used = 0;
     fd_set rfds, wfds, efds;
@@ -136,15 +135,17 @@ process_connection(int socket_desc)
 	rv = select(socket_desc+1, &rfds, &wfds, &efds, &tv);
 
 	if (rv < 0) {
+	    // The select errored, EINTR is not really one.
 	    if (errno != EINTR) break;
 	    continue;
 	}
 	if (rv == 0) {
-	    /* TICK */
+	    /* TICK: The select timed out, anything to do? */
 	    continue;
 	}
 
-	if( FD_ISSET(socket_desc, &efds) ) break; //END
+	if( FD_ISSET(socket_desc, &efds) ) break; // Bad socket -- bye
+
 	if( FD_ISSET(tty_ifd, &rfds) )
 	{
 	    char txbuf[2048];
@@ -161,11 +162,26 @@ process_connection(int socket_desc)
 	}
 
 	if( FD_ISSET(socket_desc, &rfds) ) {
-	    if ((rv = read(socket_desc, &buffer[total], sizeof buffer - total)) > 0) {
-		total += rv;
+	    if ((rv = read(socket_desc, &buffer[total], sizeof buffer - total)) <= 0) {
+		// We should always get something 'cause of the select()
+		// This is bad.
+		break;
+	    } else {
+		total += rv; // we now have rv more bytes in our buffer.
 		while (total > used) {
 		    uint8_t packet_id = buffer[used];
-		    if (total >= used + msgsize[packet_id]) {
+		    if (total < used + msgsize[packet_id]) {
+			// We don't have enough so we need to read() more
+			if (total == sizeof(buffer)) {
+			    // but if the buffer is full we need to free up space.
+			    memcpy(buffer, buffer+used, sizeof buffer - used);
+			    total = sizeof buffer - used;
+			    used = 0;
+			}
+			break; // Read more.
+		    } else {
+			// We have enough bytes for packet number [packet_id]
+			int x,y,z,h,v,b;
 			switch (packet_id) {
 			case 0x00:
 			    print_text("Host:", buffer+used+2);
@@ -177,8 +193,8 @@ process_connection(int socket_desc)
 			    break;
 			case 0x03:
 			    printf("Loading map %d%%\r", buffer[used+1027]); fflush(stdout);
-			    cells_x = buffer[used+1]*256+buffer[used+2];
-			    decompress_block(buffer+used+3, cells_x);
+			    b = buffer[used+1]*256+buffer[used+2];
+			    decompress_block(buffer+used+3, b);
 			    break;
 			case 0x04:
 			    decompress_end();
@@ -189,8 +205,26 @@ process_connection(int socket_desc)
 			    if (cells_x*cells_y*cells_z != map_len)
 				fprintf(stderr, "WARNING: map len does not match size\n");
 			    break;
+			case 0x06:
+			    if (!map_blocks) break;
+			    x = buffer[used+1]*256+buffer[used+2];
+			    y = buffer[used+3]*256+buffer[used+4];
+			    z = buffer[used+5]*256+buffer[used+6];
+			    b = buffer[used+7];
+			    if (x>=0 && x<cells_x && y>=0 && y<cells_y && z>=0 && z<cells_z)
+				map_blocks[World_Pack(x,y,z)] = b;
+			    break;
 			case 0x07:
-			    print_text("User:", buffer+used+2);
+			    x = buffer[used+66]*256+buffer[used+67];
+			    y = buffer[used+68]*256+buffer[used+69];
+			    z = buffer[used+70]*256+buffer[used+71];
+			    h = buffer[used+72];
+			    v = buffer[used+73];
+			    {
+				char buf[256];
+				sprintf(buf, "User @(%d,%d,%d,%d,%d)", x,y,z,h,v);
+				print_text(buf, buffer+used+2);
+			    }
 			    break;
 			case 0x0d:
 			    print_text(0, buffer+used+2);
@@ -204,20 +238,14 @@ process_connection(int socket_desc)
 			    break;
 			}
 
+			// Add the bytes we've just used.
 			used += msgsize[packet_id];
+			// If we've used everything clear the buffer.
 			if (used == total)
 			    used = total = 0;
-		    } else {
-			if (total == sizeof(buffer)) {
-			    memcpy(buffer, buffer+used, sizeof buffer - used);
-			    total = sizeof buffer - used;
-			    used = 0;
-			}
-			break;
 		    }
 		}
 	    }
-	    if (rv<=0) break;
 	}
     }
 
