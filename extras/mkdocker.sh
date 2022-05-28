@@ -645,6 +645,8 @@ sed -i '/CheckFile.*dll"/s/^/\/\/PATCH/' \
     ${SERVER}/Server/Server.cs
 sed -i '/"[A-Z][A-Za-z0-9]*_.dll");/s::Assembly.GetExecutingAssembly().Location); //PATCH:' \
     ${SERVER}/Scripting/Scripting.cs
+sed -i '/"[A-Z][A-Za-z0-9]*_.dll");/s::Assembly.GetExecutingAssembly().Location); //PATCH:' \
+    ${SERVER}/Modules/Compiling/Compiler.cs
 
 [ -f .git-latest ] &&
     sed -i '/string fullName;/s:;: = "'"$SERVER $(cat .git-latest)"'"; //PATCH:' \
@@ -663,7 +665,8 @@ grep //PATCH >&2 \
     CLI/Program.cs \
     ${SERVER}/Server/Server.cs \
     ${SERVER}/Server/Server.Fields.cs \
-    ${SERVER}/Scripting/Scripting.cs
+    ${SERVER}/Scripting/Scripting.cs \
+    ${SERVER}/Modules/Compiling/Compiler.cs
 
 REL=/p:Configuration=Release
 BINDIR=Release
