@@ -1,26 +1,20 @@
 #!/bin/bash -
 if [ -z "$BASH_VERSION" ];then exec bash "$0" "$@";else set +o posix;fi
 ################################################################################
-# Todo?:
-#   Lets Encrypt certificates. (Also private CA certificates ?)
-#   ? ssh daemon to use screen from?
-#   Name validation (authentication server)
-#   Add linux cc.debian.bullseye.out
 set -e
 
 help() {
     fmt <<!
 Usage
-    "$0" [hostname] [[build-type] build option]
+    "$0" [hostname] [[build-type] build options]
 
-    Without arguments creates "mcgalaxy:latest" with the "tenbit" option.
+    Without arguments creates "mcgalaxy:latest"
 
     A hostname argument "vps-123.company.com" connects to that host using ssh
     and runs docker there.
 
     The build type can be "master" or a version number to build that
-    particular docker image. With this a build option of "tenbit" adds
-    the "ten bit block numbers" compile flag.
+    particular docker image.
 
 Other possible types include:
     df
@@ -91,11 +85,13 @@ main() {
 build_default() {
     if [ "$TARGET" != '' ]
     then IMAGE=mcgalaxy:"$TARGET"
-    else IMAGE=mcgalaxy:tenbit
+    elif [ "$LOCALSOURCE" = yes ]
+    then IMAGE=mcgalaxy:patched
+    else IMAGE=mcgalaxy:latest
     fi
 
     FROM=
-    MONO_VERSION=6.12
+    MONO_VERSION=6.8
     build_std
 }
 
@@ -127,7 +123,6 @@ init_setup() {
     TARGET=''
     IMAGE=''
     MONO_VERSION=
-    TENBIT='--build-arg=COMPILE_FLAGS=TEN_BIT_BLOCKS'
     LOCALSOURCE=yes
     EXTRAFLAG=
 
@@ -138,10 +133,7 @@ init_setup() {
 }
 
 build_std() {
-    case "$IMAGE" in
-    *tenbit* ) COMPFLG="$TENBIT" ;;
-    * ) COMPFLG= ;;
-    esac
+    COMPFLG=
 
     echo Build "$IMAGE" $TARGET $FROM $COMPFLG $EXTRAFLAG $MONO_VERSION
 
@@ -208,11 +200,9 @@ build_latest() {
 }
 
 build_mono() {
-    IMAGE=mcgalaxy:tenbit-mono-latest
+    IMAGE=mcgalaxy:mono-latest
     FROM='mono:latest'
     MONO_VERSION=
-    build_std
-    IMAGE=mcgalaxy:mono-latest
     build_std
 }
 
@@ -221,10 +211,13 @@ build_all_mono() {
     do
 	IMAGE=mcgalaxy:mono-$MONO_VERSION
 	build_std ||:
-
-	IMAGE=mcgalaxy:tenbit-$MONO_VERSION
-	build_std ||:
     done
+}
+
+build_llvm() {
+    MONO_VERSION=6.8
+    IMAGE=mcgalaxy:mono-$MONO_VERSION
+    build_std
 }
 
 ################################################################################
@@ -275,6 +268,7 @@ main "$@" ; exit
 DOCKERFILE
 ################################################################################
 
+# Base linux distribution, Debian works fine
 ARG FROM=debian:bullseye
 # Supernova also worked.
 ARG SERVER=MCGalaxy
@@ -282,6 +276,12 @@ ARG SERVER=MCGalaxy
 ARG GITREPO=https://github.com/UnknownShadow200/${SERVER}
 # Pick a specific version tag
 ARG GITTAG=
+# To choose one compile for /p:DefineConstants
+ARG COMPILE_FLAGS=
+# Choose a Mono version from mono-project.com, "-" means current.
+# If you blank this out you'll get "mono-devel" from Debian (5.18 in Buster).
+# If $FROM already contains /usr/bin/mono, this has no effect.
+ARG MONO_VERSION=
 
 ################################################################################
 # Useful commands.
@@ -427,12 +427,12 @@ build_win32() {
   echo "Building win32.."
   cp $ROOT_DIR/misc/CCicon_32.res $ROOT_DIR/src/CCicon_32.res
 
-  EXE=ClassiCube.exe
+  EXE=ClassiCube.32.exe
   rm -f "$EXE" ||:
   $WIN32_CC *.c $ALL_FLAGS $WIN32_FLAGS -o "$EXE" CCicon_32.res -DCC_COMMIT_SHA=\"$LATEST\" -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32
 
   echo "Building win32 OpenGL.."
-  EXE=ClassiCube.opengl.exe
+  EXE=ClassiCube.32-opengl.exe
   rm -f "$EXE" ||:
   $WIN32_CC *.c $ALL_FLAGS $WIN32_FLAGS -o "$EXE" CCicon_32.res -DCC_COMMIT_SHA=\"$LATEST\" -DCC_BUILD_MANUAL -DCC_BUILD_WIN -DCC_BUILD_GL -DCC_BUILD_WINGUI -DCC_BUILD_WGL -DCC_BUILD_WINMM -DCC_BUILD_WININET -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32 -lopengl32
 
@@ -451,6 +451,13 @@ build_win64() {
   rm -f "$EXE" ||:
   $WIN64_CC *.c $ALL_FLAGS $WIN64_FLAGS -o "$EXE" CCicon_64.res -DCC_COMMIT_SHA=\"$LATEST\" -DCC_BUILD_MANUAL -DCC_BUILD_WIN -DCC_BUILD_GL -DCC_BUILD_WINGUI -DCC_BUILD_WGL -DCC_BUILD_WINMM -DCC_BUILD_WININET -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32 -lopengl32
 
+  if grep -q HACKEDCLIENT *.c
+  then
+      echo "Building win64 hacked.."
+      EXE=ClassiCube.64-hack.exe
+      rm -f "$EXE" ||:
+      $WIN64_CC -D'HACKEDCLIENT(x)=x' *.c $ALL_FLAGS $WIN64_FLAGS -o "$EXE" CCicon_64.res -DCC_COMMIT_SHA=\"$LATEST\" -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32
+  fi
 }
 
 if [ -d .git ]
@@ -519,14 +526,9 @@ FROM $FROM
 # The mono run time VM includes sufficient to compile MCGalaxy, so do it there.
 # I don't want to reduce it too far as plugins will need to be compiled at
 # run time.
-
-# Choose a Mono version from mono-project.com, "-" means current.
-# If you blank this out you'll get "mono-devel" from Debian (5.18 in Buster).
-# If $FROM already contains /usr/bin/mono, this has no effect.
-ARG MONO_VERSION=
-
 #TXT# SHELL ["/bin/bash", "-c"]
 
+ARG MONO_VERSION
 ################################################################################
 BEGIN
 export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=Shut_the_fuck_up
@@ -538,35 +540,45 @@ set_packages() {
 
     PKGS="$PKGS mono-devel"
 
-    if [ "$MONO_VERSION" != '' ]
+    if [ "$MONO_VERSION" = '' ]
     then
-	# Beware: Mono repo key.
-	fetch_apt_key 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+	apt-get update
 
-	# Add some more packages -- mono:latest non-slim version
-	# PKGS="$PKGS binutils ca-certificates-mono fsharp mono-vbnc"
-	# PKGS="$PKGS nuget referenceassemblies-pcl"
-
-	# Recommended
-	# PKGS="$PKGS libmono-btls-interface4.0-cil cli-common"
-	# PKGS="$PKGS krb5-locales binfmt-support mono-llvm-support"
-
-	# Note: No bullseye snapshot directory yet.
-	DEBBASE=buster
-	case "$MONO_VERSION" in
-	[34].* ) DEBBASE=stable ;;
-	5.* ) DEBBASE=stretch ;;
-	6.* ) DEBBASE=buster ;;
-	esac
-
-	# If I don't install mono-profiler mono profiling breaks nastily
-	for pkgname in mono-utils mono-profiler mono-llvm-support
+	for pkgname in msbuild
 	do
 	    FOUND=$(apt-cache show $pkgname |
 		sed -n 's/^Package: //p' 2>/dev/null)
 	    [ "$FOUND" != "" ] &&
 		PKGS="$PKGS $pkgname"
+	    :
 	done
+    else
+	# Beware: Mono repo key.
+	fetch_apt_key 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+
+	XPKGS=
+
+	# Add some more packages -- mono:latest non-slim version
+	XPKGS="$XPKGS binutils ca-certificates-mono fsharp mono-vbnc"
+	XPKGS="$XPKGS nuget referenceassemblies-pcl"
+
+	# Recommended
+	XPKGS="$XPKGS libmono-btls-interface4.0-cil cli-common"
+	XPKGS="$XPKGS krb5-locales binfmt-support mono-llvm-support"
+
+	# Note: No bullseye snapshot directory yet.
+	DEBBASE=buster
+	MSBUILD=msbuild
+	LLVM=
+	MOREPKGS=
+	case "$MONO_VERSION" in
+	"-" ) MOREPKGS="$XPKGS" ;;
+	6.8 ) DEBBASE=buster ; LLVM=mono-llvm-support ;;
+	6.6|6.4|6.0 ) DEBBASE=buster ; MSBUILD= ;;
+	6.* ) DEBBASE=buster ;;
+	5.* ) DEBBASE=stretch ;;
+	[34].* ) DEBBASE=stable ;;
+	esac
 
 	if [ "$MONO_VERSION" = '' -o ".$MONO_VERSION" = '.-' ]
 	then
@@ -578,7 +590,19 @@ set_packages() {
 		 "$DEBBASE/snapshots/$MONO_VERSION main" \
 		>> /etc/apt/sources.list
 	fi
+
+	apt-get update
+
+	# If I don't install mono-profiler mono profiling breaks nastily
+	for pkgname in $MSBUILD mono-utils mono-profiler $LLVM $MOREPKGS
+	do
+	    FOUND=$(apt-cache show $pkgname |
+		sed -n 's/^Package: //p' 2>/dev/null)
+	    [ "$FOUND" != "" ] &&
+		PKGS="$PKGS $pkgname"
+	done
     fi
+    :
 }
 
 fetch_apt_key() {
@@ -606,7 +630,6 @@ deb_cleanup(){
 }
 
 set_packages
-apt-get update
 apt-get upgrade -y --no-install-recommends
 apt-get install -y --no-install-recommends $PKGS
 deb_cleanup
@@ -635,47 +658,67 @@ cd "$O"
     exit 0
 }
 
-cd ${SERVER}
+cd "$O/${SERVER}"
+
+# Sigh, Windows.
+grep -q CmdFAQ MCGalaxy/MCGalaxy_.csproj &&
+    sed -i 's/CmdFAQ.cs/CmdFaq.cs/' MCGalaxy/MCGalaxy_.csproj
 
 # Patch server to allow it to follow best practices.
 #   http://www.mono-project.com/docs/getting-started/application-deployment
-sed -i '/\<CurrentDirectory\>.*=/s/^/\/\/PATCH/' \
-    CLI/Program.cs
+[ -f CLI/CLIProgram.cs ] &&
+    sed -i '/\<CurrentDirectory\>.*=/s/^/\/\/PATCH/' \
+	CLI/CLIProgram.cs
+[ -f CLI/Program.cs ] &&
+    sed -i '/\<CurrentDirectory\>.*=/s/^/\/\/PATCH/' \
+	CLI/Program.cs
 sed -i '/CheckFile.*dll"/s/^/\/\/PATCH/' \
     ${SERVER}/Server/Server.cs
 sed -i '/"[A-Z][A-Za-z0-9]*_.dll");/s::Assembly.GetExecutingAssembly().Location); //PATCH:' \
     ${SERVER}/Scripting/Scripting.cs
-sed -i '/"[A-Z][A-Za-z0-9]*_.dll");/s::Assembly.GetExecutingAssembly().Location); //PATCH:' \
-    ${SERVER}/Modules/Compiling/Compiler.cs
+[ -f ${SERVER}/Modules/Compiling/Compiler.cs ] &&
+    sed -i '/"[A-Z][A-Za-z0-9]*_.dll");/s::Assembly.GetExecutingAssembly().Location); //PATCH:' \
+	${SERVER}/Modules/Compiling/Compiler.cs
 
 [ -f .git-latest ] &&
     sed -i '/string fullName;/s:;: = "'"$SERVER $(cat .git-latest)"'"; //PATCH:' \
       ${SERVER}/Server/Server.Fields.cs
 
-case "$COMPILE_FLAGS" in
-*TEN_BIT_BLOCKS* )
-    echo >&2 "Using compile flags $COMPILE_FLAGS"
-    sed -i '/Activity, "Starting Server/s:Server":Server (TEN_BIT_BLOCKS)" /*//PATCH*/:' \
-	${SERVER}/Server/Server.cs
-    ;;
-esac
-
 echo >&2 Patches applied ...
 grep //PATCH >&2 \
     CLI/Program.cs \
+    CLI/CLIProgram.cs \
     ${SERVER}/Server/Server.cs \
     ${SERVER}/Server/Server.Fields.cs \
     ${SERVER}/Scripting/Scripting.cs \
-    ${SERVER}/Modules/Compiling/Compiler.cs
+    ${SERVER}/Modules/Compiling/Compiler.cs \
+    ||:
 
 REL=/p:Configuration=Release
 BINDIR=Release
-#REL=
-#BINDIR=Debug
-if [ ! -x "/usr/bin/msbuild" -a -x "/usr/bin/xbuild" ]
-then echo >&2 Warning: msbuild is missing, using xbuild.
-     xbuild $REL ${COMPILE_FLAGS:+"/p:DefineConstants=$COMPILE_FLAGS"}
-else msbuild $REL ${COMPILE_FLAGS:+"/p:DefineConstants=\"$COMPILE_FLAGS\""}
+#REL= ; BINDIR=Debug
+if [ "$COMPILE_FLAGS" != '' ]
+then
+    if [ ! -x "/usr/bin/msbuild" -a -x "/usr/bin/xbuild" ]
+    then echo >&2 Warning: msbuild is missing, using xbuild.
+	 xbuild $REL ${COMPILE_FLAGS:+"/p:DefineConstants=$COMPILE_FLAGS"}
+    else msbuild $REL ${COMPILE_FLAGS:+"/p:DefineConstants=\"$COMPILE_FLAGS\""}
+    fi
+else
+    if [ ! -x "/usr/bin/msbuild" -a -x "/usr/bin/xbuild" ]
+    then
+	echo >&2 Warning: msbuild is missing, using xbuild.
+	BLD=xbuild
+	TEN="/p:DefineConstants=TEN_BIT_BLOCKS"
+    else
+	BLD=msbuild
+	TEN="/p:DefineConstants=\"TEN_BIT_BLOCKS\""
+    fi
+
+    $BLD $REL "$TEN" &&
+	mv "bin/$BINDIR/MCGalaxy_.dll" "bin/$BINDIR/MCGalaxy_767.dll"
+    :
+    $BLD $REL
 fi
 
 # LLVM AOT compile should run faster.
@@ -708,11 +751,20 @@ namespace HelloWorld
 !
     AOT="--aot=mcpu=generic"
     mcs hello.cs && {
-	mono "$AOT" --llvm -O=all,-shared hello.exe || {
+	mono "$AOT" --llvm -O=all,-shared hello.exe >hello.log 2>&1 || {
 	    AOT=--aot
-	    mono "$AOT" --llvm -O=all,-shared hello.exe
+	    mono "$AOT" --llvm -O=all,-shared hello.exe >hello.log 2>&1
 	} || RV=1
     } || RV=1
+    cat hello.log
+
+    if [ "$RV" = 0 ]
+    then
+	grep -q '^Executing llc:' hello.log || {
+	    echo "Lies: AOT succeeded but llc didn't execute" >&2
+	    RV=1
+	}
+    fi
 
     rm -rf /tmp/hello.* /tmp/mono_aot_* ||:
 
@@ -721,21 +773,21 @@ namespace HelloWorld
 	cd "$P"
 	echo >&2 "Attempting LLVM AOT compile with $AOT"
 	cd "bin/$BINDIR"
-	for DLL in ${SERVER}CLI.exe ${SERVER}_.dll
+	for DLL in ${SERVER}_*.dll ${SERVER}CLI.exe
 	do mono "$AOT" --llvm -O=all,-shared $DLL ||:
 	done
     else
 	echo >&2 "WARNING: Skipping LLVM AOT compile, it looks broken."
     fi
-
-) ||:
+    :
+)
 
 for f in \
     LICENSE.txt Changelog.txt \
     ${SERVER}.exe ${SERVER}.exe.config \
-    ${SERVER}CLI.exe ${SERVER}CLI.exe.config \
-    ${SERVER}CLI.exe.so ${SERVER}_.dll.so \
-    ${SERVER}_.dll ${SERVER}_.dll.config \
+    ${SERVER}CLI.exe ${SERVER}CLI.exe.config ${SERVER}CLI.exe.so \
+    ${SERVER}_.dll ${SERVER}_.dll.config ${SERVER}_.dll.so \
+    ${SERVER}_767.dll ${SERVER}_767.dll.config ${SERVER}_767.dll.so \
     MySql.Data.dll Newtonsoft.Json.dll \
     sqlite3_x32.dll sqlite3_x64.dll \
     System.Data.SQLite.dll
@@ -758,6 +810,8 @@ do [ -e "bin/$BINDIR/$f" ] && { FILES="$FILES bin/$BINDIR/$f" ; continue ; }
 @
 	FILES="$FILES bin/$f"
     ;;
+    ${SERVER}_767.dll )
+	;;
     ${SERVER}CLI.exe|*.dll )
 	echo >&2 "ERROR: Can't find file $f"
 	exit 1
@@ -779,9 +833,7 @@ rm -rf ~/.mono ~/.cache ${SERVER}
 :
 COMMIT
 ################################################################################
-
-# For >255 custom blocks use: ARG COMPILE_FLAGS=TEN_BIT_BLOCKS
-ARG COMPILE_FLAGS=
+ARG COMPILE_FLAGS
 
 # Build the mcgalaxy binaries from the git repo (or context).
 RUN ./build.sh
@@ -810,10 +862,35 @@ export PREFIX="$O/lib"
 
 # No term; use screen to fake one.
 [ "$TERM" = '' ] && [ "$1" = '' ] && {
+
+    [ -f "$HOME/.screenrc" ] || cat > "$HOME/.screenrc" <<\!
+defc1 off
+defbce on
+defutf8 on
+utf8 on
+termcapinfo * "ti@:te@:G0"
+!
+
     echo Starting inside screen.
+    echo "To see ${SERVER} console use:"
+    echo "docker exec -it $(cat /etc/hostname) screen -r"
     [ -x /bin/bash ] && export SHELL=/bin/bash
     exec screen -U -D -m "$O"/start_server
 }
+
+if grep -iq 'ExtendedBlocks *= *True' properties/cpe.properties
+then
+    echo "($(date +%T)) Ten bit blocks version selected"
+    L="$O/lib/${SERVER}_"
+    [ -f "${L}767.dll" ] && {
+	mv "${L}.dll" "${L}255.dll"
+	[ -f "${L}.dll.so" ] && mv "${L}.dll.so" "${L}255.dll.so"
+	[ -f "${L}.dll.config" ] && mv "${L}.dll.config" "${L}255.dll.config"
+	mv "${L}767.dll" "${L}.dll"
+	[ -f "${L}767.dll.so" ] && mv "${L}767.dll.so" "${L}.dll.so"
+	[ -f "${L}767.dll.config" ] && mv "${L}767.dll.config" "${L}.dll.config"
+    }
+fi
 
 [ -f "$O"/lib/${SERVER}_.dll.so ] &&
     echo "($(date +%T)) AOT compiled version is in use."
