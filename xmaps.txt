@@ -1,0 +1,7 @@
+Maps with (slightly) different env settings
+
+BaconCity BaconCityBig Honda_Civic
+Main WorldTradeCenter christmasmain2
+flat layermain sandytown skinny_super
+u_Pothus3 u_spazzbunny01
+
