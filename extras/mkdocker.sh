@@ -75,7 +75,9 @@ main() {
 
     [ -d MCGalaxy ] &&
 	git -C MCGalaxy describe --tags mcgalaxy/master HEAD | fmt | tr '-' ' ' |
-	    awk '{print $1 "-" $2 "-" $3 "+" ($5-$2);}' > MCGalaxy/.git-latest
+	    awk '{ if(NF == 4 && $1 == $2) print $1 "+" $3;
+		else print $1 "-" $2 "-" $3 "+" ($5-$2);}' \
+	    > MCGalaxy/.git-latest
 
     $BUILD "$@"
     rm -f ClassiCube/.git-latest MCGalaxy/.git-latest ||:
@@ -203,6 +205,7 @@ build_mono() {
     IMAGE=mcgalaxy:mono-latest
     FROM='mono:latest'
     MONO_VERSION=
+    LOCALSOURCE=no
     build_std
 }
 
@@ -660,6 +663,9 @@ cd "$O"
 
 cd "$O/${SERVER}"
 
+# These patches work back to version 1.9.0.0, before that MCGalaxy didn't
+# have a seperate CLI exe program.
+
 # Sigh, Windows.
 grep -q CmdFAQ MCGalaxy/MCGalaxy_.csproj &&
     sed -i 's/CmdFAQ.cs/CmdFaq.cs/' MCGalaxy/MCGalaxy_.csproj
@@ -669,10 +675,15 @@ grep -q CmdFAQ MCGalaxy/MCGalaxy_.csproj &&
 [ -f CLI/CLIProgram.cs ] &&
     sed -i '/\<CurrentDirectory\>.*=/s/^/\/\/PATCH/' \
 	CLI/CLIProgram.cs
+[ -f CLI/CLIProgram.cs ] &&
+    sed -i '/if.*File.Exists.*MCGalaxy/s/^/if(false) {\/\/PATCH/' \
+	CLI/CLIProgram.cs
 [ -f CLI/Program.cs ] &&
     sed -i '/\<CurrentDirectory\>.*=/s/^/\/\/PATCH/' \
 	CLI/Program.cs
 sed -i '/CheckFile.*dll"/s/^/\/\/PATCH/' \
+    ${SERVER}/Server/Server.cs
+sed -i '/QueueOnce.InitTasks.UpdateStaffList/s/^/\/\/PATCH/' \
     ${SERVER}/Server/Server.cs
 sed -i '/"[A-Z][A-Za-z0-9]*_.dll");/s::Assembly.GetExecutingAssembly().Location); //PATCH:' \
     ${SERVER}/Scripting/Scripting.cs
@@ -796,6 +807,10 @@ do [ -e "bin/$BINDIR/$f" ] && { FILES="$FILES bin/$BINDIR/$f" ; continue ; }
    [ -e "$f" ] && { FILES="$FILES $f" ; continue ; }
    case "$f" in
    *.config )
+	if [ "$f" = "${SERVER}_767.dll.config" ]
+	then [ -f "${SERVER}_767.dll" ] || continue;
+	fi
+
 	# These are missing from git repo.
 	cat > "bin/$f" <<-\@
 	<?xml version="1.0" encoding="utf-8"?>
@@ -811,6 +826,7 @@ do [ -e "bin/$BINDIR/$f" ] && { FILES="$FILES bin/$BINDIR/$f" ; continue ; }
 	FILES="$FILES bin/$f"
     ;;
     ${SERVER}_767.dll )
+	echo >&2 "NOTE: Can't find file $f -- 10bit mode failed to compile."
 	;;
     ${SERVER}CLI.exe|*.dll )
 	echo >&2 "ERROR: Can't find file $f"
@@ -878,18 +894,21 @@ termcapinfo * "ti@:te@:G0"
     exec screen -U -D -m "$O"/start_server
 }
 
-if grep -iq 'ExtendedBlocks *= *True' properties/cpe.properties
+if [ -f properties/cpe.properties ]
 then
-    echo "($(date +%T)) Ten bit blocks version selected"
-    L="$O/lib/${SERVER}_"
-    [ -f "${L}767.dll" ] && {
-	mv "${L}.dll" "${L}255.dll"
-	[ -f "${L}.dll.so" ] && mv "${L}.dll.so" "${L}255.dll.so"
-	[ -f "${L}.dll.config" ] && mv "${L}.dll.config" "${L}255.dll.config"
-	mv "${L}767.dll" "${L}.dll"
-	[ -f "${L}767.dll.so" ] && mv "${L}767.dll.so" "${L}.dll.so"
-	[ -f "${L}767.dll.config" ] && mv "${L}767.dll.config" "${L}.dll.config"
-    }
+    if grep -iq 'ExtendedBlocks *= *True' properties/cpe.properties
+    then
+	echo "($(date +%T)) Ten bit blocks version selected"
+	L="$O/lib/${SERVER}_"
+	[ -f "${L}767.dll" ] && {
+	    mv "${L}.dll" "${L}255.dll"
+	    [ -f "${L}.dll.so" ] && mv "${L}.dll.so" "${L}255.dll.so"
+	    [ -f "${L}.dll.config" ] && mv "${L}.dll.config" "${L}255.dll.config"
+	    mv "${L}767.dll" "${L}.dll"
+	    [ -f "${L}767.dll.so" ] && mv "${L}767.dll.so" "${L}.dll.so"
+	    [ -f "${L}767.dll.config" ] && mv "${L}767.dll.config" "${L}.dll.config"
+	}
+    fi
 fi
 
 [ -f "$O"/lib/${SERVER}_.dll.so ] &&
@@ -948,6 +967,6 @@ COPY --from=windowsclient /opt/classicube/src/*.exe ./
 WORKDIR /home/user
 ARG SERVER
 ENV SERVER=${SERVER}
-CMD [ "sh","/opt/classicube/start_server"]
 EXPOSE 25565
+CMD [ "sh","/opt/classicube/start_server"]
 

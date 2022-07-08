@@ -5,5 +5,4 @@ RUN npm install -g http-server &&\
 USER node
 WORKDIR /html
 EXPOSE 8080
-CMD ["http-server", "/html", "--port", "8080", "--cors"] 
-
+CMD ["http-server", "/html", "--port", "8080", "--cors"]

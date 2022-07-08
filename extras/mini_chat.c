@@ -17,9 +17,6 @@
 
 #include <zlib.h>
 
-static int hexdump_address;
-void hex_dump(int ch);
-
 int msgsize[256] = {
     /* 0x00 */ 131,		/* Ident */
     /* 0x01 */ 1,		/* Ping */
@@ -407,36 +404,4 @@ z_error(int ret)
 	printf("Decompression Error Z_DATA_ERROR\n");
     if (ret == Z_BUF_ERROR)
 	printf("Decompression Error Z_BUF_ERROR\n");
-}
-
-void
-hex_dump(int ch)
-{
-static char linebuf[80];
-static char buf[20];
-static int pos = 0;
-
-   if (ch != EOF)
-   {
-      if(!pos)
-         memset(linebuf, ' ', sizeof(linebuf));
-      sprintf(buf, "%02x", ch&0xFF);
-      memcpy(linebuf+pos*3+(pos>7), buf, 2);
-
-      if( ch > ' ' && ch <= '~' )
-            linebuf[50+pos] = ch;
-      else  linebuf[50+pos] = '.';
-      pos = ((pos+1) & 0xF);
-   }
-
-   if((ch == EOF) != (pos == 0))
-   {
-      if (hexdump_address != -1) {
-         printf("%04x: %.66s\n", hexdump_address, linebuf);
-         hexdump_address += 16;
-      } else
-         printf(": %.66s\n", linebuf);
-      pos = 0;
-   }
-   if (ch == EOF) hexdump_address = 0;
 }
