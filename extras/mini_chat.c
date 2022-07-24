@@ -34,6 +34,10 @@ int msgsize[256] = {
     /* 0x0d */ 2+64,		/* Message */
     /* 0x0e */ 1+64,		/* Disconnect Message */
     /* 0x0f */ 2,		/* SetOP */
+    /* 0x10 */ 67,		/* ExtInfo */
+    /* 0x11 */ 69,		/* ExtEntry */
+    /* 0x12 */ 3,		/* ClickDistance */
+    /* 0x13 */ 2,		/* CustBlock */
 };
 
 #define World_Pack(x, y, z) (((y) * cells_z + (z)) * cells_x + (x))
@@ -41,10 +45,18 @@ uint8_t * map_blocks = 0;
 uint16_t cells_x, cells_y, cells_z;
 int map_len = 0;
 
+int disable_cpe = 0;
+int extensions_offered = 0;
+int extensions_received = 0;
+int sent_customblks = 0;
+int extn_customblocks = 0;
+
 int init_connection(int argc , char *argv[]);
 int process_connection();
+void process_packet(int packet_id, uint8_t * pkt, int socket_desc);
 void print_text(char * prefix, uint8_t * str);
 void pad_nbstring(uint8_t * dest, const char * str);
+void unpad_nbstring(uint8_t * str);
 void decompress_start();
 void decompress_block(uint8_t * buf, int len);
 void decompress_end();
@@ -101,7 +113,7 @@ int init_connection(int argc , char *argv[]) {
     wbuffer[0] = 0; wbuffer[1] = 7;
     pad_nbstring(wbuffer+2, userid);
     pad_nbstring(wbuffer+2+64, mppass);
-    wbuffer[2+64+64] = 0;
+    wbuffer[2+64+64] = disable_cpe?0:0x42;
 
     write(socket_desc, wbuffer, 2+64+64+1);
 
@@ -178,58 +190,9 @@ process_connection(int socket_desc)
 			break; // Read more.
 		    } else {
 			// We have enough bytes for packet number [packet_id]
-			int x,y,z,h,v,b;
-			switch (packet_id) {
-			case 0x00:
-			    print_text("Host:", buffer+used+2);
-			    print_text("MOTD:", buffer+used+66);
-			    break;
-			case 0x02:
-			    printf("Loading map\r"); fflush(stdout);
-			    decompress_start();
-			    break;
-			case 0x03:
-			    printf("Loading map %d%%\r", buffer[used+1027]); fflush(stdout);
-			    b = buffer[used+1]*256+buffer[used+2];
-			    decompress_block(buffer+used+3, b);
-			    break;
-			case 0x04:
-			    decompress_end();
-			    cells_x = buffer[used+1]*256+buffer[used+2];
-			    cells_y = buffer[used+3]*256+buffer[used+4];
-			    cells_z = buffer[used+5]*256+buffer[used+6];
-			    printf("Loaded map %d,%d,%d\n", cells_x,cells_y,cells_z);
-			    if (cells_x*cells_y*cells_z != map_len)
-				fprintf(stderr, "WARNING: map len does not match size\n");
-			    break;
-			case 0x06:
-			    if (!map_blocks) break;
-			    x = buffer[used+1]*256+buffer[used+2];
-			    y = buffer[used+3]*256+buffer[used+4];
-			    z = buffer[used+5]*256+buffer[used+6];
-			    b = buffer[used+7];
-			    if (x>=0 && x<cells_x && y>=0 && y<cells_y && z>=0 && z<cells_z)
-				map_blocks[World_Pack(x,y,z)] = b;
-			    break;
-			case 0x07:
-			    x = buffer[used+66]*256+buffer[used+67];
-			    y = buffer[used+68]*256+buffer[used+69];
-			    z = buffer[used+70]*256+buffer[used+71];
-			    h = buffer[used+72];
-			    v = buffer[used+73];
-			    {
-				char buf[256];
-				sprintf(buf, "User @(%d,%d,%d,%d,%d)", x,y,z,h,v);
-				print_text(buf, buffer+used+2);
-			    }
-			    break;
-			case 0x0d:
-			    print_text(0, buffer+used+2);
-			    break;
-			case 0x0e:
-			    print_text("Logoff:", buffer+used+1);
-			    break;
-			}
+
+			process_packet(packet_id, buffer+used, socket_desc);
+
 			if (msgsize[packet_id] <= 0) {
 			    printf("Received unknown packet id: %d\n", packet_id);
 			    break;
@@ -252,13 +215,105 @@ process_connection(int socket_desc)
 }
 
 void
+process_packet(int packet_id, uint8_t * pkt, int socket_desc)
+{
+    uint8_t wbuffer[256];
+
+    int x,y,z,h,v,b;
+    switch (packet_id) {
+    case 0x00:
+	print_text("Host:", pkt+2);
+	print_text("MOTD:", pkt+66);
+	break;
+    case 0x02:
+	printf("Loading map\r"); fflush(stdout);
+	decompress_start();
+	break;
+    case 0x03:
+	printf("Loading map %d%%\r", pkt[1027]); fflush(stdout);
+	b = pkt[1]*256+pkt[2];
+	decompress_block(pkt+3, b);
+	break;
+    case 0x04:
+	decompress_end();
+	cells_x = pkt[1]*256+pkt[2];
+	cells_y = pkt[3]*256+pkt[4];
+	cells_z = pkt[5]*256+pkt[6];
+	printf("Loaded map %d,%d,%d\n", cells_x,cells_y,cells_z);
+	if (cells_x*cells_y*cells_z != map_len)
+	    fprintf(stderr, "WARNING: map len does not match size\n");
+	break;
+    case 0x06:
+	if (!map_blocks) break;
+	x = pkt[1]*256+pkt[2];
+	y = pkt[3]*256+pkt[4];
+	z = pkt[5]*256+pkt[6];
+	b = pkt[7];
+	if (x>=0 && x<cells_x && y>=0 && y<cells_y && z>=0 && z<cells_z)
+	    map_blocks[World_Pack(x,y,z)] = b;
+	break;
+    case 0x07:
+	x = pkt[66]*256+pkt[67];
+	y = pkt[68]*256+pkt[69];
+	z = pkt[70]*256+pkt[71];
+	h = pkt[72];
+	v = pkt[73];
+	{
+	    char buf[256];
+	    sprintf(buf, "User @(%.2f,%.2f,%.2f,%d,%d)",
+		    x/32.0,y/32.0,z/32.0,h*360/256,v*360/256);
+	    print_text(buf, pkt+2);
+	}
+	break;
+    case 0x0d:
+	print_text(0, pkt+2);
+	break;
+    case 0x0e:
+	print_text("Logoff:", pkt+1);
+	break;
+    case 0x10:
+	print_text("Server Software:", pkt+1);
+	extensions_offered = pkt[65]*256+pkt[66];
+	break;
+    case 0x11:
+	unpad_nbstring(pkt+1);
+	if (strncmp("CustomBlocks", (char*)pkt+1, 64) == 0) extn_customblocks=1;
+	extensions_received++;
+	if (extensions_received == extensions_offered) {
+	    wbuffer[0] = 0x10;
+	    pad_nbstring(wbuffer+1, "minichat");
+	    wbuffer[65] = 0;
+	    wbuffer[66] = extn_customblocks;
+	    write(socket_desc, wbuffer, 67);
+	    if (extn_customblocks) {
+		wbuffer[0] = 0x11;
+		pad_nbstring(wbuffer+1, "CustomBlocks");
+		wbuffer[65] = 0;
+		wbuffer[66] = 0;
+		wbuffer[67] = 0;
+		wbuffer[68] = 1;
+		write(socket_desc, wbuffer, 69);
+	    }
+	}
+	break;
+    case 0x13:
+	if (!sent_customblks) {
+	    wbuffer[0] = 0x13; wbuffer[1] = 1;
+	    write(socket_desc, wbuffer, 2);
+	    sent_customblks = 1;
+	}
+	break;
+    }
+}
+
+void
 print_text(char * prefix, uint8_t * str)
 {
     static int toansi[] = { 30, 34, 32, 36, 31, 35, 33, 37 };
     if (prefix && *prefix)
-	printf("%s ", prefix);
-
-    printf("\033[;40;93m");
+	printf("%s \033[;40;97m", prefix);
+    else
+	printf("\033[;40;93m");
     int col = 0, len=64;
     while(len>0 && (str[len-1] == ' ' || str[len-1] == '\0')) len--;
     for(int i=0; i<len; i++) {
@@ -296,6 +351,13 @@ pad_nbstring(uint8_t * dest, const char * str)
 {
     memset(dest, ' ', 64);
     memcpy(dest, str, strlen(str));
+}
+
+void
+unpad_nbstring(uint8_t * str)
+{
+    uint8_t * p = str+63;
+    while(p>str && (*p == ' ' || *p == 0)) { *p = 0; p--; }
 }
 
 void
