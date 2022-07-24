@@ -93,7 +93,7 @@ build_default() {
     fi
 
     FROM=
-    MONO_VERSION=6.8
+    MONO_VERSION=
     build_std
 }
 
@@ -644,9 +644,14 @@ ARG SERVER
 # Match UID to your non-root user.
 ARG UID=1000
 RUN U=user ; useradd $U -u $UID -d /home/$U -m -l
-WORKDIR /opt/classicube
+
+WORKDIR /opt
+COPY --from=context --chown=user:user /opt/classicube/default.zip /opt/classicube/default.zip
+COPY --from=webclient --chown=user:user /src/cc.* /opt/classicube/client/
+COPY --from=windowsclient --chown=user:user /opt/classicube/src/*.exe /opt/classicube/client/
 COPY --from=serversrc --chown=user:user /opt/classicube/${SERVER} /opt/classicube/${SERVER}
-RUN chown user:user .
+
+WORKDIR /opt/classicube
 USER user
 
 ################################################################################
@@ -743,6 +748,7 @@ fi
 # Not used: MCGalaxy.exe MySql.Data.dll
 # Fails to compile: LibNoise.dll
 #
+[ -x /usr/lib/mono/llvm/bin/opt ] || echo>&2 LLVM AOT not found.
 [ -x /usr/lib/mono/llvm/bin/opt ] && (
     echo >&2 "Checking LLVM AOT compile $MONO_VERSION"
     RV=0
@@ -955,12 +961,6 @@ fi
 
 COMMIT
 ################################################################################
-
-COPY --from=context --chown=user:user /opt/classicube/default.zip ./
-
-WORKDIR /opt/classicube/client
-COPY --from=webclient /src/cc.* ./
-COPY --from=windowsclient /opt/classicube/src/*.exe ./
 
 # This directory is where the data is stored
 # The the script may copy the executables here too.
