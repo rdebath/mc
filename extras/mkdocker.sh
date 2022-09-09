@@ -3,6 +3,11 @@ if [ -z "$BASH_VERSION" ];then exec bash "$0" "$@";else set +o posix;fi
 ################################################################################
 set -e
 
+#   1.8.6.0 and earlier do not compile; windows filesystem issue.
+#   1.8.7.* Compiles, does not run (GUI only?)
+#   1.8.8.0 & 1.8.8.1 Run but X server failure and best practices patch fails
+#   1.8.8.2 And later appear to be fully working.
+
 help() {
     fmt <<!
 Usage
@@ -672,8 +677,9 @@ cd "$O/${SERVER}"
 # have a seperate CLI exe program.
 
 # Sigh, Windows.
-grep -q CmdFAQ MCGalaxy/MCGalaxy_.csproj &&
-    sed -i 's/CmdFAQ.cs/CmdFaq.cs/' MCGalaxy/MCGalaxy_.csproj
+[ -f MCGalaxy/MCGalaxy_.csproj ] &&
+    grep -q CmdFAQ MCGalaxy/MCGalaxy_.csproj &&
+	sed -i 's/CmdFAQ.cs/CmdFaq.cs/' MCGalaxy/MCGalaxy_.csproj
 
 # Patch server to allow it to follow best practices.
 #   http://www.mono-project.com/docs/getting-started/application-deployment
@@ -686,14 +692,30 @@ grep -q CmdFAQ MCGalaxy/MCGalaxy_.csproj &&
 [ -f CLI/Program.cs ] &&
     sed -i '/\<CurrentDirectory\>.*=/s/^/\/\/PATCH/' \
 	CLI/Program.cs
-sed -i '/CheckFile.*dll"/s/^/\/\/PATCH/' \
+
+[ -f GUI/Program.cs ] &&
+    sed -i '/\<CurrentDirectory\>.*=/s/^/\/\/PATCH/' \
+	GUI/Program.cs
+[ -f GUI/Program.cs ] &&
+    sed -i '/if.*File.Exists.*MCGalaxy/s/^/if(false) {\/\/PATCH/' \
+	GUI/Program.cs
+
+[ -f MCGalaxy/Server/Server.cs ] && {
+    sed -i '/CheckFile.*dll"/s/^/\/\/PATCH/' \
+	${SERVER}/Server/Server.cs
+    sed -i '/QueueOnce.InitTasks.UpdateStaffList/s/^/\/\/PATCH/' \
     ${SERVER}/Server/Server.cs
-sed -i '/QueueOnce.InitTasks.UpdateStaffList/s/^/\/\/PATCH/' \
-    ${SERVER}/Server/Server.cs
-sed -i '/"[A-Z][A-Za-z0-9]*_.dll");/s::Assembly.GetExecutingAssembly().Location); //PATCH:' \
-    ${SERVER}/Scripting/Scripting.cs
+}
+
+[ -f MCGalaxy/Scripting/Scripting.cs ] &&
+    sed -i '/"[A-Z][A-Za-z0-9]*_.dll");/s::Assembly.GetExecutingAssembly().Location); //PATCH:' \
+	${SERVER}/Scripting/Scripting.cs
 [ -f ${SERVER}/Modules/Compiling/Compiler.cs ] &&
     sed -i '/"[A-Z][A-Za-z0-9]*_.dll");/s::Assembly.GetExecutingAssembly().Location); //PATCH:' \
+	${SERVER}/Modules/Compiling/Compiler.cs
+
+[ -f ${SERVER}/Modules/Compiling/Compiler.cs ] &&
+    sed -i '/Path.GetFileName(Assembly.GetExecutingAssembly().Location);/s::Assembly.GetExecutingAssembly().Location; //PATCH:' \
 	${SERVER}/Modules/Compiling/Compiler.cs
 
 [ -f .git-latest ] &&
@@ -704,6 +726,7 @@ echo >&2 Patches applied ...
 grep //PATCH >&2 \
     CLI/Program.cs \
     CLI/CLIProgram.cs \
+    GUI/Program.cs \
     ${SERVER}/Server/Server.cs \
     ${SERVER}/Server/Server.Fields.cs \
     ${SERVER}/Scripting/Scripting.cs \
@@ -731,8 +754,13 @@ else
 	TEN="/p:DefineConstants=\"TEN_BIT_BLOCKS\""
     fi
 
-    $BLD $REL "$TEN" &&
-	mv "bin/$BINDIR/MCGalaxy_.dll" "bin/$BINDIR/MCGalaxy_767.dll"
+    $BLD $REL "$TEN" && {
+	mv "bin/$BINDIR/${SERVER}_.dll" "bin/$BINDIR/${SERVER}_767.dll"
+	[ -f "bin/$BINDIR/${SERVER}_.dll.mdb" ] &&
+	    mv "bin/$BINDIR/${SERVER}_.dll.mdb" "bin/$BINDIR/${SERVER}_767.dll.mdb"
+	[ -f "bin/$BINDIR/${SERVER}_.dll.config" ] &&
+	    mv "bin/$BINDIR/${SERVER}_.dll.config" "bin/$BINDIR/${SERVER}_767.dll.config"
+    }
     :
     $BLD $REL
 fi
@@ -799,12 +827,13 @@ namespace HelloWorld
     :
 )
 
+DOALL=1
 for f in \
     LICENSE.txt Changelog.txt \
     ${SERVER}.exe ${SERVER}.exe.config \
     ${SERVER}CLI.exe ${SERVER}CLI.exe.config ${SERVER}CLI.exe.so \
-    ${SERVER}_.dll ${SERVER}_.dll.config ${SERVER}_.dll.so \
-    ${SERVER}_767.dll ${SERVER}_767.dll.config ${SERVER}_767.dll.so \
+    ${SERVER}_.dll ${SERVER}_.dll.mdb ${SERVER}_.dll.config ${SERVER}_.dll.so \
+    ${SERVER}_767.dll ${SERVER}_767.dll.mdb ${SERVER}_767.dll.config ${SERVER}_767.dll.so \
     MySql.Data.dll Newtonsoft.Json.dll \
     sqlite3_x32.dll sqlite3_x64.dll \
     System.Data.SQLite.dll
@@ -835,8 +864,8 @@ do [ -e "bin/$BINDIR/$f" ] && { FILES="$FILES bin/$BINDIR/$f" ; continue ; }
 	echo >&2 "NOTE: Can't find file $f -- 10bit mode failed to compile."
 	;;
     ${SERVER}CLI.exe|*.dll )
-	echo >&2 "ERROR: Can't find file $f"
-	exit 1
+	echo >&2 "ERROR: Can't find file $f will copy everything"
+	DOALL=1
 	;;
     * ) echo >&2 "WARNING: Can't find file $f" ;;
 
@@ -848,6 +877,7 @@ do [ -e "bin/$BINDIR/$f" ] && { FILES="$FILES bin/$BINDIR/$f" ; continue ; }
 done
 
 mkdir -p "$O"/lib
+[ "$DOALL" = 1 ] && cp -a bin/$BINDIR/* "$O"/lib/.
 cp -a $FILES "$O"/lib
 cd "$O"
 
@@ -868,6 +898,10 @@ set -e
 export LANG=C.UTF-8
 O=/opt/classicube
 export PREFIX="$O/lib"
+SERVEREXE="$PREFIX/${SERVER}"CLI.exe
+GUISERVEREXE="$PREFIX/${SERVER}".exe
+[ ! -f "$SERVEREXE" ] && [ -f "$GUISERVEREXE" ] &&
+    SERVEREXE="$GUISERVEREXE"
 
 # Use this to change env variables, ulimit settings etc.
 [ -f mono_env ] && . ./mono_env
@@ -877,7 +911,7 @@ export PREFIX="$O/lib"
 	while cat toserver ; do :; done &
 	cat /dev/tty &
     } 2>/dev/null |
-    mono $MONOOPTS "$PREFIX"/${SERVER}CLI.exe |
+    mono $MONOOPTS "$SERVEREXE" |
     cut -b1-320
     exit
 }
@@ -909,9 +943,11 @@ then
 	[ -f "${L}767.dll" ] && {
 	    mv "${L}.dll" "${L}255.dll"
 	    [ -f "${L}.dll.so" ] && mv "${L}.dll.so" "${L}255.dll.so"
+	    [ -f "${L}.dll.mdb" ] && mv "${L}.dll.mdb" "${L}255.dll.mdb"
 	    [ -f "${L}.dll.config" ] && mv "${L}.dll.config" "${L}255.dll.config"
 	    mv "${L}767.dll" "${L}.dll"
 	    [ -f "${L}767.dll.so" ] && mv "${L}767.dll.so" "${L}.dll.so"
+	    [ -f "${L}767.dll.mdb" ] && mv "${L}767.dll.mdb" "${L}.dll.mdb"
 	    [ -f "${L}767.dll.config" ] && mv "${L}767.dll.config" "${L}.dll.config"
 	}
     fi
@@ -919,6 +955,11 @@ fi
 
 [ -f "$O"/lib/${SERVER}_.dll.so ] &&
     echo "($(date +%T)) AOT compiled version is in use."
+
+# Populate bin dir (if present)
+[ -d bin ] && {
+    cp -a "$O"/lib/* bin/. ||:
+}
 
 # Populate the webclient dir
 [ -d "$O"/client ] && {
@@ -933,12 +974,12 @@ fi
     [ "$(stty size)" = "0 0" ] && {
 	echo 'WARNING: Not using rlwrap because stty failed.'
 	export TERM=dumb
-	exec mono $MONOOPTS "$PREFIX"/${SERVER}CLI.exe
+	exec mono $MONOOPTS "$SERVEREXE"
     }
 }
 
 [ "$1" = direct ] &&
-    exec mono $MONOOPTS "$PREFIX"/${SERVER}CLI.exe
+    exec mono $MONOOPTS "$SERVEREXE"
 
 # This fifo is so we can send huge lines to MCGalaxy for /mb
 rm -f toserver ||:
