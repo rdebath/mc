@@ -5,8 +5,10 @@ set -e
 
 #   1.8.6.0 and earlier do not compile; windows filesystem issue.
 #   1.8.7.* Compiles, does not run (GUI only?)
-#   1.8.8.0 & 1.8.8.1 Run but X server failure and best practices patch fails
+#   1.8.8.0 & 1.8.8.1 Run with errors
 #   1.8.8.2 And later appear to be fully working.
+
+# Some versions may need mcgalaxy2/MCGalaxy_.dll to exist
 
 help() {
     fmt <<!
@@ -65,6 +67,7 @@ main() {
     all|latest ) BUILD="build_$1"; shift ;;
     master ) BUILD=build_latest ; shift ;;
 
+    local ) BUILD=build_local_version ; shift ;;
     [0-9]*.* ) BUILD=build_version ;;
 
     "") if [ -d MCGalaxy -a -d ClassiCube ]
@@ -124,6 +127,22 @@ build_version() {
     build_std
 }
 
+build_local_version() {
+    if [ "$2" = '' ]
+    then IMAGE=mcgalaxy:"$1"
+    else IMAGE=mcgalaxy:"$1-$2"
+    fi
+
+    CHECKOUT="$1"
+    EXTRAFLAG=
+    TARGET=
+    FROM=
+    MONO_VERSION="$3"
+    LOCALSOURCE=yes
+
+    build_std
+}
+
 init_setup() {
     FROM=
     MC="$HOME/ClassiCube"
@@ -132,6 +151,7 @@ init_setup() {
     MONO_VERSION=
     LOCALSOURCE=yes
     EXTRAFLAG=
+    CHECKOUT=
 
     [ -d "$MC" ] || LOCALSOURCE=no
 
@@ -144,7 +164,7 @@ build_std() {
 
     echo Build "$IMAGE" $TARGET $FROM $COMPFLG $EXTRAFLAG $MONO_VERSION
 
-    if [ "$LOCALSOURCE" = yes ]
+    if [ "$LOCALSOURCE" = yes ]&&[ "$CHECKOUT" = '' ]
     then
 	DKF="/tmp/_tmp.dockerfile.$$"
 	mkdir -p "$DKF"
@@ -160,6 +180,30 @@ build_std() {
 	    -
 	rm "$DKF"/Dockerfile
 	rmdir "$DKF" ||:
+
+    elif [ "$LOCALSOURCE" = yes ]
+    then
+	DKF="/tmp/_tmp.dockerfile.$$"
+	mkdir -p "$DKF"
+	build "$0" > "$DKF"/Dockerfile
+	git worktree remove /tmp/_wt."$CHECKOUT"/MCGalaxy 2>/dev/null ||:
+	git worktree add /tmp/_wt."$CHECKOUT"/MCGalaxy "$CHECKOUT"^0
+
+	tar czf - --exclude=.git -C "$DKF" Dockerfile \
+	    -C "$MC" ClassiCube \
+	    -C /tmp/_wt."$CHECKOUT" MCGalaxy |
+	docker build -t "$IMAGE" \
+	    ${TARGET:+"--target=$TARGET"} \
+	    ${FROM:+"--build-arg=FROM=$FROM"} \
+	    $COMPFLG \
+	    $EXTRAFLAG \
+	    ${MONO_VERSION:+"--build-arg=MONO_VERSION=$MONO_VERSION"} \
+	    -
+	rm "$DKF"/Dockerfile
+	rmdir "$DKF" ||:
+	git worktree remove /tmp/_wt."$CHECKOUT"/MCGalaxy 2>/dev/null ||:
+	rmdir /tmp/_wt."$CHECKOUT" ||:
+
     else
 	build "$0" |
 	docker build -t "$IMAGE" \
@@ -673,13 +717,16 @@ cd "$O"
 
 cd "$O/${SERVER}"
 
-# These patches work back to version 1.9.0.0, before that MCGalaxy didn't
-# have a seperate CLI exe program.
+# These patches work back to version 1.8.8.2
 
 # Sigh, Windows.
 [ -f MCGalaxy/MCGalaxy_.csproj ] &&
     grep -q CmdFAQ MCGalaxy/MCGalaxy_.csproj &&
 	sed -i 's/CmdFAQ.cs/CmdFaq.cs/' MCGalaxy/MCGalaxy_.csproj
+
+[ -f MCGalaxy/Games/CTF/CTFGame.DB.cs ] &&
+    grep -q CtfGame.DB MCGalaxy/MCGalaxy_.csproj &&
+	sed -i 's/CtfGame.DB/CTFGame.DB/' MCGalaxy/MCGalaxy_.csproj
 
 # Patch server to allow it to follow best practices.
 #   http://www.mono-project.com/docs/getting-started/application-deployment
@@ -700,11 +747,21 @@ cd "$O/${SERVER}"
     sed -i '/if.*File.Exists.*MCGalaxy/s/^/if(false) {\/\/PATCH/' \
 	GUI/Program.cs
 
-[ -f MCGalaxy/Server/Server.cs ] && {
+[ -f "${SERVER}"/Server/Server.cs ] && {
     sed -i '/CheckFile.*dll"/s/^/\/\/PATCH/' \
 	${SERVER}/Server/Server.cs
     sed -i '/QueueOnce.InitTasks.UpdateStaffList/s/^/\/\/PATCH/' \
     ${SERVER}/Server/Server.cs
+}
+
+[ -f "${SERVER}"/Database/Backends/MySQL.cs ] && {
+    sed -i '/CheckFile.*dll"/s/^/\/\/PATCH/' \
+	${SERVER}/Database/Backends/MySQL.cs
+}
+
+[ -f "${SERVER}"/Database/Backends/SQLite.cs ] && {
+    sed -i '/CheckFile.*dll"/s/^/\/\/PATCH/' \
+	${SERVER}/Database/Backends/SQLite.cs
 }
 
 [ -f MCGalaxy/Scripting/Scripting.cs ] &&
@@ -723,9 +780,15 @@ cd "$O/${SERVER}"
       ${SERVER}/Server/Server.Fields.cs
 
 echo >&2 Patches applied ...
+
+XFILES=
+[ -f CLI/CLIProgram.cs ] && XFILES="$XFILES CLI/CLIProgram.cs"
+X=MCGalaxy/Database/Backends/SQLite.cs ; [ -f $X ] && XFILES="$XFILES $X"
+X=MCGalaxy/Database/Backends/MySQL.cs ; [ -f $X ] && XFILES="$XFILES $X"
+
 grep //PATCH >&2 \
+    ${XFILES} \
     CLI/Program.cs \
-    CLI/CLIProgram.cs \
     GUI/Program.cs \
     ${SERVER}/Server/Server.cs \
     ${SERVER}/Server/Server.Fields.cs \
@@ -755,14 +818,24 @@ else
     fi
 
     $BLD $REL "$TEN" && {
-	mv "bin/$BINDIR/${SERVER}_.dll" "bin/$BINDIR/${SERVER}_767.dll"
+	mkdir -p "tmp/$BINDIR"
+	mv "bin/$BINDIR/${SERVER}_.dll" "tmp/$BINDIR/${SERVER}_767.dll"
 	[ -f "bin/$BINDIR/${SERVER}_.dll.mdb" ] &&
-	    mv "bin/$BINDIR/${SERVER}_.dll.mdb" "bin/$BINDIR/${SERVER}_767.dll.mdb"
+	    mv "bin/$BINDIR/${SERVER}_.dll.mdb" "tmp/$BINDIR/${SERVER}_767.dll.mdb"
 	[ -f "bin/$BINDIR/${SERVER}_.dll.config" ] &&
-	    mv "bin/$BINDIR/${SERVER}_.dll.config" "bin/$BINDIR/${SERVER}_767.dll.config"
+	    mv "bin/$BINDIR/${SERVER}_.dll.config" "tmp/$BINDIR/${SERVER}_767.dll.config"
+	rm -rf bin obj ||:
+	mkdir -p "bin/$BINDIR"
     }
     :
     $BLD $REL
+    :
+    mv "tmp/$BINDIR/${SERVER}_767.dll" "bin/$BINDIR/${SERVER}_767.dll"
+    [ -f "tmp/$BINDIR/${SERVER}_767.dll.mdb" ] &&
+	mv "tmp/$BINDIR/${SERVER}_767.dll.mdb" "bin/$BINDIR/${SERVER}_767.dll.mdb"
+    [ -f "tmp/$BINDIR/${SERVER}_767.dll.config" ] &&
+	mv "tmp/$BINDIR/${SERVER}_767.dll.config" "bin/$BINDIR/${SERVER}_767.dll.config"
+    :
 fi
 
 # LLVM AOT compile should run faster.

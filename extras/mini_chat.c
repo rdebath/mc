@@ -277,7 +277,8 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	break;
     case 0x11:
 	unpad_nbstring(pkt+1);
-	if (strncmp("CustomBlocks", (char*)pkt+1, 64) == 0) extn_customblocks=1;
+	if (strncmp("CustomBlocks", (char*)pkt+1, 64) == 0)
+	    extn_customblocks=1;
 	extensions_received++;
 	if (extensions_received == extensions_offered) {
 	    wbuffer[0] = 0x10;

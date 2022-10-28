@@ -1,4 +1,4 @@
-commit a435fc9ac7f58e837e5b8f4c15fc8ab55cb5aaa7 (HEAD -> classicube)
+commit 2a0a04799cb7816a5656640f399f607baa5e1e3e (HEAD -> classicube, origin/classicube)
 Author: Robert de Bath <rdebath@tvisiontech.co.uk>
 Date:   Sun Aug 1 20:16:09 2021 +0100
 
@@ -22,7 +22,7 @@ Date:   Sun Aug 1 20:16:09 2021 +0100
     Also: Client teleport ("/client tp X Y Z") always available in Chat.c
 
 diff --git a/src/Chat.c b/src/Chat.c
-index d5d538416..9b57d1b06 100644
+index 589eb503e..b1515af19 100644
 --- a/src/Chat.c
 +++ b/src/Chat.c
 @@ -637,7 +637,7 @@ static void TeleportCommand_Execute(const cc_string* args, int argsCount) {
@@ -35,7 +35,7 @@ index d5d538416..9b57d1b06 100644
  		"&a/client tp [x y z]",
  		"&eMoves you to the given coordinates.",
 diff --git a/src/Protocol.c b/src/Protocol.c
-index e93a94f69..80b54fc3f 100644
+index ed8303cd7..e4a15918c 100644
 --- a/src/Protocol.c
 +++ b/src/Protocol.c
 @@ -30,6 +30,10 @@
@@ -49,7 +49,7 @@ index e93a94f69..80b54fc3f 100644
  #define QUOTE(x) #x
  #define STRINGIFY(val) QUOTE(val)
  struct _ProtocolData Protocol;
-@@ -191,7 +195,9 @@ static void UpdateLocation(EntityID id, struct LocationUpdate* update, cc_bool i
+@@ -175,7 +179,9 @@ static void UpdateLocation(EntityID id, struct LocationUpdate* update, cc_bool i
  
  static void UpdateUserType(struct HacksComp* hacks, cc_uint8 value) {
  	cc_bool isOp = value >= 100 && value <= 127;
@@ -59,7 +59,7 @@ index e93a94f69..80b54fc3f 100644
  	if (cpe_blockPerms) return;
  
  	Blocks.CanPlace[BLOCK_BEDROCK]     = isOp;
-@@ -200,6 +206,10 @@ static void UpdateUserType(struct HacksComp* hacks, cc_uint8 value) {
+@@ -184,6 +190,10 @@ static void UpdateUserType(struct HacksComp* hacks, cc_uint8 value) {
  	Blocks.CanPlace[BLOCK_STILL_WATER] = isOp;
  	Blocks.CanPlace[BLOCK_LAVA]        = isOp;
  	Blocks.CanPlace[BLOCK_STILL_LAVA]  = isOp;
@@ -70,26 +70,32 @@ index e93a94f69..80b54fc3f 100644
  }
  
  
-@@ -467,6 +477,9 @@ static void Classic_Handshake(cc_uint8* data) {
+@@ -452,7 +462,12 @@ static void Classic_Handshake(cc_uint8* data) {
  	
  	String_Copy(&hacks->HacksFlags,         &Server.Name);
  	String_AppendString(&hacks->HacksFlags, &Server.MOTD);
 +
-+	HACKEDCLIENT(String_AppendConst(&hacks->HacksFlags, "+ophax"));
++	HACKEDCLIENT(String_AppendConst(&hacks->HacksFlags, " +ophax"));
 +	HACKEDCLIENT(if(String_ContainsConst(&hacks->HacksFlags, "+ophax")));
  	HacksComp_RecheckFlags(hacks);
++	HACKEDCLIENT(if(hacks->BaseHorSpeed<0.5) hacks->BaseHorSpeed=1;)
++	HACKEDCLIENT(if(hacks->MaxJumps<1) hacks->MaxJumps=1;)
  }
  
-@@ -700,6 +713,8 @@ static void Classic_Kick(cc_uint8* data) {
+ static void Classic_Ping(cc_uint8* data) { }
+@@ -684,7 +699,11 @@ static void Classic_Kick(cc_uint8* data) {
  static void Classic_SetPermission(cc_uint8* data) {
  	struct HacksComp* hacks = &LocalPlayer_Instance.Hacks;
  	UpdateUserType(hacks, data[0]);
 +
 +	HACKEDCLIENT(if(String_ContainsConst(&hacks->HacksFlags, "+ophax")));
  	HacksComp_RecheckFlags(hacks);
++	HACKEDCLIENT(if(hacks->BaseHorSpeed<0.5) hacks->BaseHorSpeed=1;)
++	HACKEDCLIENT(if(hacks->MaxJumps<1) hacks->MaxJumps=1;)
  }
  
-@@ -1126,6 +1141,11 @@ static void CPE_SetBlockPermission(cc_uint8* data) {
+ static void Classic_ReadAbsoluteLocation(cc_uint8* data, EntityID id, cc_bool interpolate) {
+@@ -1110,6 +1129,11 @@ static void CPE_SetBlockPermission(cc_uint8* data) {
  
  	Blocks.CanPlace[block]  = *data++ != 0;
  	Blocks.CanDelete[block] = *data++ != 0;
@@ -101,7 +107,7 @@ index e93a94f69..80b54fc3f 100644
  	Event_RaiseVoid(&BlockEvents.PermissionsChanged);
  }
  
-@@ -1162,6 +1182,8 @@ static void CPE_HackControl(cc_uint8* data) {
+@@ -1146,6 +1170,8 @@ static void CPE_HackControl(cc_uint8* data) {
  	struct LocalPlayer* p = &LocalPlayer_Instance;
  	int jumpHeight;
  
@@ -110,7 +116,7 @@ index e93a94f69..80b54fc3f 100644
  	p->Hacks.CanFly            = data[0] != 0;
  	p->Hacks.CanNoclip         = data[1] != 0;
  	p->Hacks.CanSpeed          = data[2] != 0;
-@@ -1269,6 +1291,7 @@ static void CPE_SetMapEnvProperty(cc_uint8* data) {
+@@ -1253,6 +1279,7 @@ static void CPE_SetMapEnvProperty(cc_uint8* data) {
  	case 3:
  		Env_SetCloudsHeight(value); break;
  	case 4:
@@ -118,7 +124,7 @@ index e93a94f69..80b54fc3f 100644
  		Math_Clamp(value, -0x7FFF, 0x7FFF);
  		Game_MaxViewDistance = value <= 0 ? DEFAULT_MAX_VIEWDIST : value;
  		Game_SetViewDistance(Game_UserViewDistance); break;
-@@ -1577,6 +1600,7 @@ static void CPE_Reset(void) {
+@@ -1561,6 +1588,7 @@ static void CPE_Reset(void) {
  	cpe_needD3Fix = false; cpe_extEntityPos = false; cpe_twoWayPing = false; 
  	cpe_pluginMessages = false; cpe_extTextures = false; cpe_fastMap = false;
  	cpe_extBlocks = false; Game_UseCPEBlocks = false; cpe_blockPerms = false;
