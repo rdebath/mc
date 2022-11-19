@@ -34,16 +34,22 @@ int msgsize[256] = {
     /* 0x0d */ 2+64,		/* Message */
     /* 0x0e */ 1+64,		/* Disconnect Message */
     /* 0x0f */ 2,		/* SetOP */
+
     /* 0x10 */ 67,		/* ExtInfo */
     /* 0x11 */ 69,		/* ExtEntry */
     /* 0x12 */ 3,		/* ClickDistance */
     /* 0x13 */ 2,		/* CustBlock */
 };
 
+typedef struct xyzhv_t xyzhv_t;
+struct xyzhv_t { int x, y, z; int8_t h, v, valid; };
+
 #define World_Pack(x, y, z) (((y) * cells_z + (z)) * cells_x + (x))
 uint8_t * map_blocks = 0;
 uint16_t cells_x, cells_y, cells_z;
 int map_len = 0;
+xyzhv_t posn, spawn;
+int posn_st = 1;
 
 int disable_cpe = 0;
 int extensions_offered = 0;
@@ -62,8 +68,10 @@ void decompress_block(uint8_t * buf, int len);
 void decompress_end();
 void z_error(int ret);
 
+#ifdef ZLIB_VERNUM
 z_stream strm  = { .zalloc = Z_NULL, .zfree = Z_NULL, .opaque = Z_NULL};
 int z_state = 0;
+#endif
 
 int main(int argc , char *argv[]) {
     int socket_desc = init_connection(argc, argv);
@@ -150,6 +158,25 @@ process_connection(int socket_desc)
 	}
 	if (rv == 0) {
 	    /* TICK: The select timed out, anything to do? */
+
+#if SPINNING
+	    if (posn.valid) {
+		posn.h+=posn_st;
+		if (!posn.h) posn_st = -posn_st;
+		uint8_t wbuffer[256];
+		wbuffer[0] = 8;
+		wbuffer[1] = 255;
+		wbuffer[2] = posn.x>>8;
+		wbuffer[3] = posn.x;
+		wbuffer[4] = (posn.y+29)>>8;	//TODO
+		wbuffer[5] = (posn.y+29);
+		wbuffer[6] = posn.z>>8;
+		wbuffer[7] = posn.z;
+		wbuffer[8] = posn.h;
+		wbuffer[9] = posn.v;
+		write(socket_desc, wbuffer, 10);
+	    }
+#endif
 	    continue;
 	}
 
@@ -226,22 +253,31 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	print_text("MOTD:", pkt+66);
 	break;
     case 0x02:
+	spawn.valid = 0;
+#ifdef ZLIB_VERNUM
 	printf("Loading map\r"); fflush(stdout);
 	decompress_start();
+#endif
 	break;
     case 0x03:
+#ifdef ZLIB_VERNUM
 	printf("Loading map %d%%\r", pkt[1027]); fflush(stdout);
 	b = pkt[1]*256+pkt[2];
 	decompress_block(pkt+3, b);
+#endif
 	break;
     case 0x04:
-	decompress_end();
 	cells_x = pkt[1]*256+pkt[2];
 	cells_y = pkt[3]*256+pkt[4];
 	cells_z = pkt[5]*256+pkt[6];
+#ifdef ZLIB_VERNUM
+	decompress_end();
 	printf("Loaded map %d,%d,%d\n", cells_x,cells_y,cells_z);
 	if (cells_x*cells_y*cells_z != map_len)
 	    fprintf(stderr, "WARNING: map len does not match size\n");
+#else
+	printf("Received map %d,%d,%d\n", cells_x,cells_y,cells_z);
+#endif
 	break;
     case 0x06:
 	if (!map_blocks) break;
@@ -260,10 +296,41 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	v = pkt[73];
 	{
 	    char buf[256];
-	    sprintf(buf, "User @(%.2f,%.2f,%.2f,%d,%d)",
-		    x/32.0,y/32.0,z/32.0,h*360/256,v*360/256);
+	    sprintf(buf, "User %d @(%.2f,%.2f,%.2f,%d,%d)",
+		    pkt[1], x/32.0,y/32.0,z/32.0,h*360/256,v*360/256);
 	    print_text(buf, pkt+2);
 	}
+	if (pkt[1] == 255) {
+	    posn.x = x;
+	    posn.y = y-29;
+	    posn.z = z;
+	    posn.h = h;
+	    posn.v = v;
+	    posn.valid = 1;
+	}
+	break;
+    case 0x08:
+	x = pkt[2]*256+pkt[3];
+	y = pkt[4]*256+pkt[5];
+	z = pkt[6]*256+pkt[7];
+	h = pkt[8];
+	v = pkt[9];
+	if (pkt[1] == 255) {
+	    printf("TP User %d @(%.2f,%.2f,%.2f,%d,%d)\n",
+		    pkt[1], x/32.0,y/32.0,z/32.0,h*360/256,v*360/256);
+
+	    posn.x = x;
+	    posn.y = y-7;
+	    posn.z = z;
+	    posn.h = h;
+	    posn.v = v;
+	    posn.valid = 1;
+	    if (!spawn.valid) spawn = posn;
+	}
+#if 0
+	else printf("MV User %d @(%.2f,%.2f,%.2f,%d,%d)\n",
+		    pkt[1], x/32.0,(y-51)/32.0,z/32.0,h*360/256,v*360/256);
+#endif
 	break;
     case 0x0d:
 	print_text(0, pkt+2);
@@ -361,6 +428,7 @@ unpad_nbstring(uint8_t * str)
     while(p>str && (*p == ' ' || *p == 0)) { *p = 0; p--; }
 }
 
+#ifdef ZLIB_VERNUM
 void
 decompress_start()
 {
@@ -468,3 +536,4 @@ z_error(int ret)
     if (ret == Z_BUF_ERROR)
 	printf("Decompression Error Z_BUF_ERROR\n");
 }
+#endif
