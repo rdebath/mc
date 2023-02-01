@@ -26,6 +26,7 @@ namespace Core {
             Player[] online = PlayerInfo.Online.Items;
 
             foreach (Player pl in online) {
+                pl.SendCpeMessage(CpeMessageType.SmallAnnouncement, "&8from " +  p.FormatNick(p));
                 pl.SendCpeMessage(CpeMessageType.Announcement, message);
             }
         }

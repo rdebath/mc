@@ -3,12 +3,20 @@ if [ -z "$BASH_VERSION" ];then exec bash "$0" "$@";else set +o posix;fi
 ################################################################################
 set -e
 
-#   1.8.6.0 and earlier do not compile; windows filesystem issue.
-#   1.8.7.* Compiles, does not run (GUI only?)
-#   1.8.8.0 & 1.8.8.1 Run with errors
+# Running under mono.
+#   1.0.0.0 Works
+#   1.8.0.0 Works
+#   1.8.1.0 Works but is numbered 1.8.0.0 (mis-targeted tag)
+#   1.8.2.0 Works
+#   1.8.3.0 Has compile errors. (mis-targeted tag)
+#   1.8.4.0 Requires removal of compile errors in a "PerformUpdate" function.
+#   ..1.8.6.0 Has Windows filesystem compile issues
+#   ..1.8.7.5 Need Viewmode.cfg prepopulated
+#   1.8.0.0..1.8.8.1 Emit errors but continue to work.
 #   1.8.8.2 And later appear to be fully working.
 
-# Some versions may need mcgalaxy2/MCGalaxy_.dll to exist
+#  Ten Bit blocks starts on 1.9.0.5
+#  Websocket starts on 1.9.1.3
 
 help() {
     fmt <<!
@@ -129,7 +137,11 @@ build_version() {
 
 build_local_version() {
     if [ "$2" = '' ]
-    then IMAGE=mcgalaxy:"$1"
+    then
+	if [ "$1" = master ]
+	then IMAGE=mcgalaxy:latest
+	else IMAGE=mcgalaxy:"$1"
+	fi
     else IMAGE=mcgalaxy:"$1-$2"
     fi
 
@@ -186,8 +198,19 @@ build_std() {
 	DKF="/tmp/_tmp.dockerfile.$$"
 	mkdir -p "$DKF"
 	build "$0" > "$DKF"/Dockerfile
+	case "$CHECKOUT" in
+	# Some of the early ones have bad tags.
+	1.0.0.0 ) CHECKOUTCOMMIT=877b26159b84b30a4f4fb00a66e4bc1fecafe6e3 ;;
+	1.8.1.0 ) CHECKOUTCOMMIT=78e57fcb227b5d06dcd725bfdd6bbd6cfb4b68c6 ;;
+	1.8.2.0 ) CHECKOUTCOMMIT=f2e7606b805cb75ea7839a4878cab08065be2fec ;;
+	1.8.3.0 ) CHECKOUTCOMMIT=59a5462e47b5d6d8be2f4eff753e6a5ca35bf61c ;;
+	1.8.4.0 ) CHECKOUTCOMMIT=b3b9dae5cb9a74806550e34a4afb06102ecf313f ;;
+
+	* ) CHECKOUTCOMMIT="$CHECKOUT^0" ;;
+	esac
+
 	git worktree remove /tmp/_wt."$CHECKOUT"/MCGalaxy 2>/dev/null ||:
-	git worktree add /tmp/_wt."$CHECKOUT"/MCGalaxy "$CHECKOUT"^0
+	git worktree add /tmp/_wt."$CHECKOUT"/MCGalaxy "$CHECKOUTCOMMIT"
 
 	tar czf - --exclude=.git -C "$DKF" Dockerfile \
 	    -C "$MC" ClassiCube \
@@ -696,7 +719,7 @@ RUN U=user ; useradd $U -u $UID -d /home/$U -m -l
 
 WORKDIR /opt
 COPY --from=context --chown=user:user /opt/classicube/default.zip /opt/classicube/default.zip
-COPY --from=webclient --chown=user:user /src/cc.* /opt/classicube/client/
+COPY --from=webclient --chown=user:user /src/cc.* /opt/classicube/webclient/
 COPY --from=windowsclient --chown=user:user /opt/classicube/src/*.exe /opt/classicube/client/
 COPY --from=serversrc --chown=user:user /opt/classicube/${SERVER} /opt/classicube/${SERVER}
 
@@ -717,17 +740,6 @@ cd "$O"
 
 cd "$O/${SERVER}"
 
-# These patches work back to version 1.8.8.2
-
-# Sigh, Windows.
-[ -f MCGalaxy/MCGalaxy_.csproj ] &&
-    grep -q CmdFAQ MCGalaxy/MCGalaxy_.csproj &&
-	sed -i 's/CmdFAQ.cs/CmdFaq.cs/' MCGalaxy/MCGalaxy_.csproj
-
-[ -f MCGalaxy/Games/CTF/CTFGame.DB.cs ] &&
-    grep -q CtfGame.DB MCGalaxy/MCGalaxy_.csproj &&
-	sed -i 's/CtfGame.DB/CTFGame.DB/' MCGalaxy/MCGalaxy_.csproj
-
 # Patch server to allow it to follow best practices.
 #   http://www.mono-project.com/docs/getting-started/application-deployment
 [ -f CLI/CLIProgram.cs ] &&
@@ -736,6 +748,9 @@ cd "$O/${SERVER}"
 [ -f CLI/CLIProgram.cs ] &&
     sed -i '/if.*File.Exists.*MCGalaxy/s/^/if(false) {\/\/PATCH/' \
 	CLI/CLIProgram.cs
+[ -f CLI/CLI.cs ] &&
+    sed -i '/if.*File.Exists.*MCGalaxy/s/^/if(false) {\/\/PATCH/' \
+	CLI/CLI.cs
 [ -f CLI/Program.cs ] &&
     sed -i '/\<CurrentDirectory\>.*=/s/^/\/\/PATCH/' \
 	CLI/Program.cs
@@ -744,14 +759,14 @@ cd "$O/${SERVER}"
     sed -i '/\<CurrentDirectory\>.*=/s/^/\/\/PATCH/' \
 	GUI/Program.cs
 [ -f GUI/Program.cs ] &&
-    sed -i '/if.*File.Exists.*MCGalaxy/s/^/if(false) {\/\/PATCH/' \
+    sed -i '/if.*File.Exists.*MCGalaxy.*dll/s/^/if(false) {\/\/PATCH/' \
 	GUI/Program.cs
 
 [ -f "${SERVER}"/Server/Server.cs ] && {
     sed -i '/CheckFile.*dll"/s/^/\/\/PATCH/' \
 	${SERVER}/Server/Server.cs
     sed -i '/QueueOnce.InitTasks.UpdateStaffList/s/^/\/\/PATCH/' \
-    ${SERVER}/Server/Server.cs
+	${SERVER}/Server/Server.cs
 }
 
 [ -f "${SERVER}"/Database/Backends/MySQL.cs ] && {
@@ -764,7 +779,7 @@ cd "$O/${SERVER}"
 	${SERVER}/Database/Backends/SQLite.cs
 }
 
-[ -f MCGalaxy/Scripting/Scripting.cs ] &&
+[ -f "${SERVER}"/Scripting/Scripting.cs ] &&
     sed -i '/"[A-Z][A-Za-z0-9]*_.dll");/s::Assembly.GetExecutingAssembly().Location); //PATCH:' \
 	${SERVER}/Scripting/Scripting.cs
 [ -f ${SERVER}/Modules/Compiling/Compiler.cs ] &&
@@ -775,30 +790,119 @@ cd "$O/${SERVER}"
     sed -i '/Path.GetFileName(Assembly.GetExecutingAssembly().Location);/s::Assembly.GetExecutingAssembly().Location; //PATCH:' \
 	${SERVER}/Modules/Compiling/Compiler.cs
 
-[ -f .git-latest ] &&
+# Insert a detailed version if available.
+[ -f .git-latest ] && [ -f ${SERVER}/Server/Server.Fields.cs ] &&
     sed -i '/string fullName;/s:;: = "'"$SERVER $(cat .git-latest)"'"; //PATCH:' \
       ${SERVER}/Server/Server.Fields.cs
 
+################################################################################
+# These patches are needed for older versions.
+# Sigh, Windows.
+[ -f MCGalaxy/MCGalaxy_.csproj ] &&
+    grep -q CmdFAQ MCGalaxy/MCGalaxy_.csproj &&
+	sed -i 's/CmdFAQ.cs/CmdFaq.cs/' MCGalaxy/MCGalaxy_.csproj
+
+[ -f MCGalaxy/Games/CTF/CTFGame.DB.cs ] &&
+    grep -q CtfGame.DB MCGalaxy/MCGalaxy_.csproj &&
+	sed -i 's/CtfGame.DB/CTFGame.DB/' MCGalaxy/MCGalaxy_.csproj
+
+[ -f MCGalaxy/Network/ClassiCube.cs ] &&
+    sed -i '/software=MCGalaxy";/s/";/%20" + Server.Version; \/\/PATCH/' \
+	MCGalaxy/Network/ClassiCube.cs
+
+################################################################################
+# Very old versions: 1.0.0.0 .. 1.8.8.1
+[ -f Program.cs ] && {
+    sed -i '/\<CurrentDirectory\>.*=/s/^/\/\/PATCH/' \
+	Program.cs
+    sed -i '/if (File.Exists.*MCGalaxy.*))/s/^/if(true) \/\/PATCH/' \
+	Program.cs
+
+    [ -f MCGalaxy_.csproj ] && {
+
+	grep -q Commands.Building MCGalaxy_.csproj &&
+	    sed -i 's/Building/building/' MCGalaxy_.csproj
+	grep -q Commands.'\<Other\>' MCGalaxy_.csproj &&
+	    sed -i 's/\<Other\>/other/' MCGalaxy_.csproj
+	grep -q '\<Util\>' MCGalaxy_.csproj &&
+	    sed -i 's/\<Util\>/util/' MCGalaxy_.csproj
+	grep -q SharkBite.Thresher MCGalaxy_.csproj &&
+	    sed -i 's/SharkBite.Thresher/sharkbite.thresher/' MCGalaxy_.csproj
+	grep -q '\<Queue\>' MCGalaxy_.csproj &&
+	    sed -i 's/\<Queue\>/queue/' MCGalaxy_.csproj
+
+	# Completely comment out the function!
+	[ -f GUI/Program.cs ] &&
+	    grep -q 'public static void PerformUpdate' GUI/Program.cs && {
+		sed -i \
+		    '/public static void PerformUpdate/i public static void PerformUpdate(){} \/\/PATCH
+		    /public static void PerformUpdate/,/^        }/{
+			s/^/\/\/ /
+		    }' \
+		    GUI/Program.cs
+	    }
+
+	[ -f Player/Player.cs ] &&
+	    sed -i '/if (id != 17)/s/17)/17 \&\& id != 16) \/\/PATCH/' \
+		Player/Player.cs
+    }
+    [ -f Server/Server.cs ] && {
+	sed -i '/CheckFile.*dll"/s/^/\/\/PATCH/' \
+	    Server/Server.cs
+	sed -i '/QueueOnce.UpdateStaffList/s/^/\/\/PATCH/' \
+	    Server/Server.cs
+	sed -i '/UpdateStaffList();/s/^/\/\/PATCH/' \
+	    Server/Server.cs
+	sed -i '/Background.QueueOnce(UpdateStaffListTask);/s/^/\/\/PATCH/' \
+	    Server/Server.cs
+	sed -i '/Log("Starting Server");/{n;s/^ *{/if(false){\/\/PATCH/;}' \
+	    Server/Server.cs
+    }
+    [ -f Server/Server.Tasks.cs ] && {
+	sed -i '/ml.Queue(UpdateStaffListTask);/s/^/\/\/PATCH/' \
+	    Server/Server.Tasks.cs
+    }
+    [ -f Commands/Information/CmdInfo.cs ] && {
+	sed -i '/Command.all.Find("devs")/s/^/\/\/PATCH/' \
+	    Commands/Information/CmdInfo.cs
+    }
+    [ -f Network/ClassiCube.cs ] && {
+	sed -i '/software=MCGalaxy";/s/";/%20" + Server.Version; \/\/PATCH/' \
+	    Network/ClassiCube.cs
+    }
+    [ -f Database/SQLite.cs ] && {
+	sed -i '/" + Server.apppath + ".MCGalaxy.db/s:" + Server.apppath + ".::' \
+	    Database/SQLite.cs
+    }
+}
+################################################################################
+
 echo >&2 Patches applied ...
 
-XFILES=
-[ -f CLI/CLIProgram.cs ] && XFILES="$XFILES CLI/CLIProgram.cs"
-X=MCGalaxy/Database/Backends/SQLite.cs ; [ -f $X ] && XFILES="$XFILES $X"
-X=MCGalaxy/Database/Backends/MySQL.cs ; [ -f $X ] && XFILES="$XFILES $X"
-
-grep //PATCH >&2 \
-    ${XFILES} \
-    CLI/Program.cs \
-    GUI/Program.cs \
-    ${SERVER}/Server/Server.cs \
-    ${SERVER}/Server/Server.Fields.cs \
-    ${SERVER}/Scripting/Scripting.cs \
+for XFILE in \
+    ${SERVER}/Database/Backends/MySQL.cs \
+    ${SERVER}/Database/Backends/SQLite.cs \
     ${SERVER}/Modules/Compiling/Compiler.cs \
-    ||:
+    ${SERVER}/Scripting/Scripting.cs \
+    ${SERVER}/Server/Server.Fields.cs \
+    ${SERVER}/Server/Server.cs \
+    CLI/CLI.cs \
+    CLI/CLIProgram.cs \
+    CLI/Program.cs \
+    Commands/Information/CmdInfo.cs \
+    GUI/Program.cs \
+    Network/ClassiCube.cs \
+    Player/Player.cs \
+    Program.cs \
+    Server/Server.Tasks.cs \
+    Server/Server.cs
+
+do [ -f "$XFILE" ] || continue ; grep //PATCH >&2 /dev/null "$XFILE" ||:
+done
 
 REL=/p:Configuration=Release
 BINDIR=Release
-#REL= ; BINDIR=Debug
+# REL=/p:Configuration=Debug ; BINDIR=Debug
 if [ "$COMPILE_FLAGS" != '' ]
 then
     if [ ! -x "/usr/bin/msbuild" -a -x "/usr/bin/xbuild" ]
@@ -811,30 +915,41 @@ else
     then
 	echo >&2 Warning: msbuild is missing, using xbuild.
 	BLD=xbuild
-	TEN="/p:DefineConstants=TEN_BIT_BLOCKS"
+	TEN="/p:DefineConstants=TEN_BIT_BLOCKS,CLI"
     else
 	BLD=msbuild
-	TEN="/p:DefineConstants=\"TEN_BIT_BLOCKS\""
+	TEN="/p:DefineConstants=\"TEN_BIT_BLOCKS;CLI\""
     fi
 
-    $BLD $REL "$TEN" && {
-	mkdir -p "tmp/$BINDIR"
-	mv "bin/$BINDIR/${SERVER}_.dll" "tmp/$BINDIR/${SERVER}_767.dll"
-	[ -f "bin/$BINDIR/${SERVER}_.dll.mdb" ] &&
-	    mv "bin/$BINDIR/${SERVER}_.dll.mdb" "tmp/$BINDIR/${SERVER}_767.dll.mdb"
-	[ -f "bin/$BINDIR/${SERVER}_.dll.config" ] &&
-	    mv "bin/$BINDIR/${SERVER}_.dll.config" "tmp/$BINDIR/${SERVER}_767.dll.config"
-	rm -rf bin obj ||:
-	mkdir -p "bin/$BINDIR"
+    HASTENBIT=$(find . -type f -exec grep -l TEN_BIT_BLOCKS {} + |wc -l)
+
+    if [ "$HASTENBIT" -gt 0 ]
+    then
+	echo Ten bit build
+	if $BLD $REL "$TEN" >/tmp/build-ten.log
+	then
+	    mkdir -p "tmp/$BINDIR"
+	    mv "bin/$BINDIR/${SERVER}_.dll" "tmp/$BINDIR/${SERVER}_767.dll"
+	    [ -f "bin/$BINDIR/${SERVER}_.dll.mdb" ] &&
+		mv "bin/$BINDIR/${SERVER}_.dll.mdb" "tmp/$BINDIR/${SERVER}_767.dll.mdb"
+	    [ -f "bin/$BINDIR/${SERVER}_.dll.config" ] &&
+		mv "bin/$BINDIR/${SERVER}_.dll.config" "tmp/$BINDIR/${SERVER}_767.dll.config"
+	    rm -rf bin obj ||:
+	    mkdir -p "bin/$BINDIR"
+	else cat /tmp/build-ten.log
+	fi
+    fi
+
+    echo Eight bit build
+    $BLD $REL ${SERVER}.sln > /tmp/build.log || { cat /tmp/build.log ; exit 1; }
+    :
+    [ -f "tmp/$BINDIR/${SERVER}_767.dll" ] && {
+	    mv "tmp/$BINDIR/${SERVER}_767.dll" "bin/$BINDIR/${SERVER}_767.dll"
+	[ -f "tmp/$BINDIR/${SERVER}_767.dll.mdb" ] &&
+	    mv "tmp/$BINDIR/${SERVER}_767.dll.mdb" "bin/$BINDIR/${SERVER}_767.dll.mdb"
+	[ -f "tmp/$BINDIR/${SERVER}_767.dll.config" ] &&
+	    mv "tmp/$BINDIR/${SERVER}_767.dll.config" "bin/$BINDIR/${SERVER}_767.dll.config"
     }
-    :
-    $BLD $REL
-    :
-    mv "tmp/$BINDIR/${SERVER}_767.dll" "bin/$BINDIR/${SERVER}_767.dll"
-    [ -f "tmp/$BINDIR/${SERVER}_767.dll.mdb" ] &&
-	mv "tmp/$BINDIR/${SERVER}_767.dll.mdb" "bin/$BINDIR/${SERVER}_767.dll.mdb"
-    [ -f "tmp/$BINDIR/${SERVER}_767.dll.config" ] &&
-	mv "tmp/$BINDIR/${SERVER}_767.dll.config" "bin/$BINDIR/${SERVER}_767.dll.config"
     :
 fi
 
@@ -950,7 +1065,7 @@ do [ -e "bin/$BINDIR/$f" ] && { FILES="$FILES bin/$BINDIR/$f" ; continue ; }
 done
 
 mkdir -p "$O"/lib
-[ "$DOALL" = 1 ] && cp -a bin/$BINDIR/* "$O"/lib/.
+[ "$DOALL" = 1 ] && { cp -a bin/$BINDIR/* "$O"/lib/. || { ls -lR bin ; exit 1 ;}; }
 cp -a $FILES "$O"/lib
 cd "$O"
 
@@ -971,10 +1086,7 @@ set -e
 export LANG=C.UTF-8
 O=/opt/classicube
 export PREFIX="$O/lib"
-SERVEREXE="$PREFIX/${SERVER}"CLI.exe
-GUISERVEREXE="$PREFIX/${SERVER}".exe
-[ ! -f "$SERVEREXE" ] && [ -f "$GUISERVEREXE" ] &&
-    SERVEREXE="$GUISERVEREXE"
+export VERSION=$(awk '{gsub("[v \r]*","",$0);print $0;exit;}' "$O"/lib/Changelog.txt )
 
 # Use this to change env variables, ulimit settings etc.
 [ -f mono_env ] && . ./mono_env
@@ -984,7 +1096,7 @@ GUISERVEREXE="$PREFIX/${SERVER}".exe
 	while cat toserver ; do :; done &
 	cat /dev/tty &
     } 2>/dev/null |
-    mono $MONOOPTS "$SERVEREXE" |
+    mono $MONOOPTS "$2" |
     cut -b1-320
     exit
 }
@@ -1006,6 +1118,18 @@ termcapinfo * "ti@:te@:G0"
     [ -x /bin/bash ] && export SHELL=/bin/bash
     exec screen -U -D -m "$O"/start_server
 }
+
+case "$VERSION" in
+# These have ten bit but no properties/cpe.properties
+1.9.0.[5-9]|1.9.[12].*|1.9.3.[0-5] )
+    [ ! -f properties/cpe.properties ] && {
+	mkdir -p properties
+	echo ExtendedBlocks = True > properties/cpe.properties
+    }
+    ;;
+# No ten bit build
+1.8.*|1.9.0.* ) ;;
+esac
 
 if [ -f properties/cpe.properties ]
 then
@@ -1029,14 +1153,41 @@ fi
 [ -f "$O"/lib/${SERVER}_.dll.so ] &&
     echo "($(date +%T)) AOT compiled version is in use."
 
-# Populate bin dir (if present)
+RUNDIR="$PREFIX"
+# Populate bin dir (if present, or may be needed)
+case "$VERSION" in
+1.8.[89]*|1.9.[01].* ) mkdir -p bin ;; # server.properties:backup-location
+1.8.*|1.0.* )
+    mkdir -p bin
+    # Newer versions default to cli in Mono.
+    # Beware 1.8.[0-2].0 look at line number 5 for the "true" value.
+    [ -f Viewmode.cfg ] || {
+cat > Viewmode.cfg <<\!
+#This file controls how the console window is shown to the server host
+#cli: True or False (Determines whether a CLI interface is used) (Set True if on Mono)
+#high-quality: True or false (Determines whether the GUI interface uses higher quality objects)
+
+cli = true
+high-quality = true
+!
+    }
+    ;;
+esac
 [ -d bin ] && {
-    cp -a "$O"/lib/* bin/. ||:
+    cp -a "$O"/lib/* bin/. && RUNDIR="$(pwd)/bin"
 }
+
+SERVEREXE="$RUNDIR/${SERVER}"CLI.exe
+[ ! -f "$PREFIX/${SERVER}CLI.exe" ] && [ -f "$PREFIX/${SERVER}.exe" ] &&
+    SERVEREXE="$RUNDIR/${SERVER}.exe"
 
 # Populate the webclient dir
 [ -d "$O"/client ] && {
     mkdir -p webclient
+    case "$VERSION" in
+    1.8.*|1.9.0.*|1.9.1.[012] ) ;;
+    *) cp -a "$O"/webclient/. webclient/. ;;
+    esac
     cp -a "$O"/client/. webclient/.
     cp -p "$O"/default.zip webclient/.
 }
@@ -1069,8 +1220,8 @@ mkfifo toserver ||:
 # Also: Mono tries to be evil to the tty, rlwrap is easily confused.
 
 if [ "$$" = 1 ]
-then exec /usr/bin/tini rlwrap -- -a -t dumb sh "$O"/start_server rcmd
-else exec rlwrap -a -t dumb sh "$O"/start_server rcmd
+then exec /usr/bin/tini rlwrap -- -a -t dumb sh "$O"/start_server rcmd "$SERVEREXE"
+else exec rlwrap -a -t dumb sh "$O"/start_server rcmd "$SERVEREXE"
 fi
 
 COMMIT
