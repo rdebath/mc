@@ -26,13 +26,14 @@ SEARCH="$1"
 NICK="$2"
 PASS="$3"
 CODE="$4"
+NICKF=$(echo "$NICK" | tr 'A-Z' 'a-z')
 
 [ "$NICK" != '' ] && {
     mkdir -p -m 0700 "$COOKIES"
 
     JSON1=$(curl -sS \
-	--cookie "$COOKIES"/.cookie.$NICK \
-	--cookie-jar "$COOKIES"/.cookie.$NICK \
+	--cookie "$COOKIES"/.cookie.$NICKF \
+	--cookie-jar "$COOKIES"/.cookie.$NICKF \
 	https://www.classicube.net/api/login/)
 
     AUTHD=$(echo "$JSON1" | jq -r .authenticated)
@@ -45,8 +46,8 @@ CODE="$4"
 	then
 	    JSON2=$(
 		curl -sS https://www.classicube.net/api/login \
-		    --cookie "$COOKIES"/.cookie.$NICK \
-		    --cookie-jar "$COOKIES"/.cookie.$NICK \
+		    --cookie "$COOKIES"/.cookie.$NICKF \
+		    --cookie-jar "$COOKIES"/.cookie.$NICKF \
 		    --data username="$NICK" \
 		    --data password="$PASS" \
 		    --data token="$TOKEN" \
@@ -60,7 +61,7 @@ CODE="$4"
 
 	[ "$AUTHD" = false ] && {
 	    echo >&2 "Login failed ... $JSON2"
-	    rm -f "$COOKIES"/.cookie.$NICK ||:
+	    rm -f "$COOKIES"/.cookie.$NICKF ||:
 	    echo '?'
 	    exit 1
 	}
@@ -90,7 +91,7 @@ elif [ "${#SEARCH}" = 32 ]
 then HASH="$SEARCH"
      echo>&2 "Using $HASH directly"
 else
-    curl -sS ${NICK:+--cookie "$COOKIES"/.cookie."$NICK"} https://www.classicube.net/api/servers > "$TMP"
+    curl -sS ${NICK:+--cookie "$COOKIES"/.cookie."$NICKF"} https://www.classicube.net/api/servers > "$TMP"
 
     case "$SEARCH" in
     *\$ ) SEARCH="${SEARCH%?}	"
@@ -134,7 +135,7 @@ else
 fi
 
 fetch_j3() {
-    JSON3=$(curl -sS ${NICK:+--cookie "$COOKIES"/.cookie."$NICK"} \
+    JSON3=$(curl -sS ${NICK:+--cookie "$COOKIES"/.cookie."$NICKF"} \
 		"https://www.classicube.net/api/server/$HASH")
 }
 

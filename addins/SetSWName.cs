@@ -17,8 +17,10 @@ namespace Core {
                 if (File.Exists(swnamefile)) {
                     string[] lines =
                         File.ReadAllLines(swnamefile, Encoding.UTF8);
-                    if (lines.Length > 0)
+                    if (lines.Length > 0 && lines[0].Length > 0)
                         Server.SoftwareNameVersioned = lines[0];
+                    if (lines.Length > 1 && lines[1].Length > 0)
+                        Server.SoftwareName = lines[1];
                 }
             }
             catch(Exception e) { }
@@ -37,11 +39,13 @@ namespace Core {
         public override void Use(Player p, string message) {
             message = message.Replace("%", "&");
             Server.SoftwareNameVersioned = message;
-            File.WriteAllText(SetSWName.swnamefile, message, Encoding.UTF8);
+            Server.SoftwareName = message;
+            File.WriteAllText(SetSWName.swnamefile, message + "\n" + message, Encoding.UTF8);
         }
 
         public override void Help(Player p) {
             p.Message("%T/SetSWName - Set full software name");
+            p.Message("The file \"" + SetSWName.swnamefile + "\" contains two lines for SoftwareNameVersioned and SoftwareName");
         }
     }
 }

@@ -791,6 +791,7 @@ cd "$O/${SERVER}"
 	${SERVER}/Modules/Compiling/Compiler.cs
 
 # Insert a detailed version if available.
+# Not cannot change "InternalVersion" or "Version" as it's format is fixed.
 [ -f .git-latest ] && [ -f ${SERVER}/Server/Server.Fields.cs ] &&
     sed -i '/string fullName;/s:;: = "'"$SERVER $(cat .git-latest)"'"; //PATCH:' \
       ${SERVER}/Server/Server.Fields.cs
@@ -1087,6 +1088,7 @@ export LANG=C.UTF-8
 O=/opt/classicube
 export PREFIX="$O/lib"
 export VERSION=$(awk '{gsub("[v \r]*","",$0);print $0;exit;}' "$O"/lib/Changelog.txt )
+MONO=mono
 
 # Use this to change env variables, ulimit settings etc.
 [ -f mono_env ] && . ./mono_env
@@ -1096,7 +1098,7 @@ export VERSION=$(awk '{gsub("[v \r]*","",$0);print $0;exit;}' "$O"/lib/Changelog
 	while cat toserver ; do :; done &
 	cat /dev/tty &
     } 2>/dev/null |
-    mono $MONOOPTS "$2" |
+    "$MONO" $MONOOPTS "$2" |
     cut -b1-320
     exit
 }
@@ -1198,12 +1200,12 @@ SERVEREXE="$RUNDIR/${SERVER}"CLI.exe
     [ "$(stty size)" = "0 0" ] && {
 	echo 'WARNING: Not using rlwrap because stty failed.'
 	export TERM=dumb
-	exec mono $MONOOPTS "$SERVEREXE"
+	exec "$MONO" $MONOOPTS "$SERVEREXE"
     }
 }
 
 [ "$1" = direct ] &&
-    exec mono $MONOOPTS "$SERVEREXE"
+    exec "$MONO" $MONOOPTS "$SERVEREXE"
 
 # This fifo is so we can send huge lines to MCGalaxy for /mb
 rm -f toserver ||:

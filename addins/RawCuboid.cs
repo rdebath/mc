@@ -5,9 +5,6 @@
 //
 // TODO: Portal, map env, set physics.
 //
-// TODO: Fix extra_permission for SendBatch, SendScript
-// TODO: SendScript with extra perm for URL.
-//
 ////////////////////////////////////////////////////////////////////////////////
 //
 // This command is specifically designed to work from the console.
@@ -77,12 +74,14 @@ namespace MCGalaxy
         public override string type { get { return "other"; } }
 
         public override LevelPermission defaultRank { get { return LevelPermission.Guest; } }
+        public override CommandPerm[] ExtraPerms {
+            get { return new[] { new CommandPerm(LevelPermission.Admin, "can send to other players") }; }
+        }
 
         public override void Help(Player p)
         {
             p.Message("/SendBatch /[mb style cmd args]");
-            p.Message("SuperOP can send to other players");
-            p.Message(" /SendBatch player /[mb style cmd args]");
+            p.Message("/SendBatch player /[mb style cmd args]");
         }
 
         public override void Use(Player p, string message, CommandData data)
@@ -94,11 +93,7 @@ namespace MCGalaxy
 
                 if (parts.Length != 2) { parts = null; Help(p); return; }
 
-                if (!p.IsSuper && p.Rank < LevelPermission.Admin) {
-                    parts = null;
-                    p.Message("Only SuperOP may use SendBatch to another player");
-                    return;
-                }
+                if (!p.IsSuper && !CheckExtraPerm(p, data, 1)) { parts = null; return; }
 
                 target = PlayerInfo.FindMatches(p, parts[0]);
                 if (target == null) return;
@@ -137,6 +132,9 @@ namespace MCGalaxy
         public override string type { get { return "other"; } }
 
         public override LevelPermission defaultRank { get { return LevelPermission.AdvBuilder; } }
+        public override CommandPerm[] ExtraPerms {
+            get { return new[] { new CommandPerm(LevelPermission.Admin, "can send to other players") }; }
+        }
 
         public override void Help(Player p)
         {
@@ -158,10 +156,7 @@ namespace MCGalaxy
                 } else {
                     if (parts.Length != 2) { Help(p); return; }
 
-                    if (!p.IsSuper && p.Rank < LevelPermission.Admin) {
-                        p.Message("Only SuperOP may use SendScript to another user.");
-                        return;
-                    }
+                    if (!p.IsSuper && !CheckExtraPerm(p, data, 1)) return;
 
                     target = PlayerInfo.FindMatches(p, parts[0]);
                     if (target == null) return;
@@ -230,6 +225,9 @@ namespace MCGalaxy
         //   LevelPermission.Guest, LevelPermission.Builder, LevelPermission.AdvBuilder,
         //   LevelPermission.Operator, LevelPermission.Admin, LevelPermission.Nobody
         public override LevelPermission defaultRank { get { return LevelPermission.Builder; } }
+        public override CommandPerm[] ExtraPerms {
+            get { return new[] { new CommandPerm(LevelPermission.Admin, "can run on any map without realmowner permission") }; }
+        }
 
         private int counter;
         private int err_count;
@@ -249,6 +247,7 @@ namespace MCGalaxy
             p.Message("/RawCuboid - Place blocks, lots of them.");
             p.Message("/rc [level|-] [subcommand]*");
             p.Message("For subcommands use /help rc cmds");
+            p.Message("Normally only runnable by realm owner");
         }
 
         public override void Help(Player p, string message) {
@@ -256,7 +255,6 @@ namespace MCGalaxy
             p.Message(" pl B X Y Z");
             p.Message(" box B X1 Y1 Z1 X2 Y2 Z2");
             p.Message(" msg \"Hello world\"");
-            p.Message(" sendcmd player cmd \"args\"");
             p.Message(" mb BlockName X Y Z \"MB Contents\"");
             p.Message(" NoBlockDB, BlockDB, Pause, Quiet, lb, Portal");
         }
@@ -289,15 +287,15 @@ namespace MCGalaxy
                         return;
                     }
 
-                    if (!p.IsSuper &&
-                        p.Rank < LevelPermission.Admin &&
-                        !LevelInfo.IsRealmOwner(lvl, p.name)) {
-                            p.Message("You may only perform that action on your own map."); return;
+                    if (!lvl.Config.Deletable || !lvl.Config.Buildable) {
+                        p.Message("Modification (Place/Delete) is disabled on this level.");
+                        return;
                     }
 
-                    if (!lvl.Config.Deletable || !lvl.Config.Buildable) {
-                        p.Message("Modification (Place/Delete) is disabled on this level."); return;
-                    }
+                    if (!p.IsSuper &&
+                        !LevelInfo.IsRealmOwner(lvl, p.name) &&
+                        !CheckExtraPerm(p, data, 1))
+                        return;
                 }
 
                 int cmdcount = 0;
@@ -321,8 +319,8 @@ namespace MCGalaxy
                     } else if (parts[argno] == "") {
                         argno++;
                     } else if (parts[argno].CaselessEq("sendcmd") && argno+3 < parts.Length) {
-                        if (!p.IsSuper && p.Rank < LevelPermission.Admin) {
-                            p.Message("Only SuperOP may use SendCmd");
+                        if (!p.IsSuper) {
+                            p.Message("Only Console needs to use SendCmd");
                             break;
                         }
                         if (!DoSendCmd(p, parts, argno+1))
@@ -345,11 +343,6 @@ namespace MCGalaxy
                             break;
                         argno+=8;
                     } else if (parts[argno].CaselessEq("mb") && argno+5 < parts.Length) {
-                        if (!p.IsSuper && p.Rank < LevelPermission.Admin) {
-                            // Can't be bothered to check the extended permissions. Maybe later.
-                            p.Message("Only SuperOP may create a messagebox with this command");
-                            break;
-                        }
                         if (!DoMessageBox(p, lvl, parts, argno+1, (data.Context == CommandContext.MessageBlock) ))
                             break;
                         argno+=6;
