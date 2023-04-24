@@ -1,5 +1,6 @@
 using System;
 using MCGalaxy;
+using MCGalaxy.Events.PlayerEvents;
 
 namespace Core {
     public class PlugGC : Plugin {
@@ -8,10 +9,16 @@ namespace Core {
 
         public override void Load(bool startup) {
             Command.Register(new CmdGC());
+            // OnPlayerDisconnectEvent.Register(GCLogoff, Priority.Low);
         }
 
         public override void Unload(bool shutdown) {
             Command.Unregister(Command.Find("GC"));
+            // OnPlayerDisconnectEvent.Unregister(GCLogoff);
+        }
+
+        void GCLogoff(Player p, string discmsg) {
+            Server.DoGC();
         }
     }
 
@@ -21,8 +28,8 @@ namespace Core {
         public override LevelPermission defaultRank { get { return LevelPermission.Nobody; } }
 
         public override void Use(Player p, string message) {
-            p.Message("Starting full GC");
-            GC.Collect(2);
+            GC.Collect(); // Blocking collection of all memory
+            GC.WaitForPendingFinalizers();
             p.Message("Completed full GC");
         }
 
