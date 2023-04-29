@@ -9,6 +9,11 @@
 #include <ctype.h>
 #include <assert.h>
 
+#if defined(__STDC__) && defined(__STDC_ISO_10646__)
+#include <locale.h>
+#include <wchar.h>
+#endif
+
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
@@ -41,6 +46,11 @@ int msgsize[256] = {
     /* 0x12 */ 3,		/* ClickDistance */
     /* 0x13 */ 2,		/* CustBlock */
 };
+
+#if defined(__STDC__) && defined(__STDC_ISO_10646__)
+extern int cp437rom[256];
+int to_cp437(int ch);
+#endif
 
 typedef struct xyzhv_t xyzhv_t;
 struct xyzhv_t { int x, y, z; int8_t h, v, valid; };
@@ -75,6 +85,9 @@ void z_error(int ret);
 void ticker(int socket_desc);
 void move_player(int);
 
+char last_motd[64];
+char last_srvr[64];
+
 #ifdef ZLIB_VERNUM
 z_stream strm  = { .zalloc = Z_NULL, .zfree = Z_NULL, .opaque = Z_NULL};
 int z_state = 0;
@@ -82,6 +95,9 @@ int z_state = 0;
 
 int main(int argc , char *argv[]) {
     srandom(time(0));
+#if defined(__STDC__) && defined(__STDC_ISO_10646__)
+    setlocale(LC_ALL, "");
+#endif
     int socket_desc = init_connection(argc, argv);
     int rv = process_connection(socket_desc);
     return rv;
@@ -95,12 +111,15 @@ int init_connection(int argc , char *argv[]) {
     char * host = "localhost";
     int port = 25565;
     char * userid = getenv("USER");
-    char * mppass = "";
+    char * mppass = "0";
 
     if (argc > 1) userid = argv[1];
-    if (argc > 4) mppass = argv[2];
+    if (argc > 3) mppass = argv[2];
     if (argc > 3) host = argv[3];
     if (argc > 4) port = atoi(argv[4]);
+#ifdef DEFAULT_MPPASS
+    if (argc < 3) mppass = DEFAULT_MPPASS;
+#endif
 
     if (port <= 0 || port > 65535) {
 	fprintf(stderr, "Illegal port number\n");
@@ -175,14 +194,25 @@ process_connection(int socket_desc)
 	if( FD_ISSET(tty_ifd, &rfds) )
 	{
 	    char txbuf[2048];
+	    char txwbuf[2048];
+	    int i, j;
 	    rv = read(tty_ifd, txbuf, sizeof(txbuf));
 	    if (rv <= 0) break;
 	    if (rv > 0) {
 		if (txbuf[rv-1] == '\n') rv--;
 		txbuf[rv] = 0;
-
 		wbuffer[0] = 0x0d; wbuffer[1] = 0xFF;
+#if defined(__STDC__) && defined(__STDC_ISO_10646__)
+		for(i=j=0; txbuf[i]; i++) {
+		    int ch = to_cp437((uint8_t)txbuf[i]);
+		    if (ch)
+			txwbuf[j++] = ch;
+		}
+		txwbuf[j] = 0;
+		pad_nbstring(wbuffer+2, txwbuf);
+#else
 		pad_nbstring(wbuffer+2, txbuf);
+#endif
 		write(socket_desc, wbuffer, 2+64);
 	    }
 	}
@@ -242,8 +272,14 @@ ticker(int socket_desc)
 	    int x = posn.x/32, y = (posn.y-6)/32, z = posn.z/32;
 	    int off, b[3] = {0,0,0};
 	    x += dx; z += dz; dx=dz=0;
-	    if (x < 0 || x >= cells_x) x = cells_x/2;
-	    if (z < 0 || z >= cells_x) z = cells_z/2;
+	    if (x < 0 || x >= cells_x || z < 0 || z >= cells_x) {
+		if (spawn.valid) {
+		    x = spawn.x/32; y = (spawn.y-6)/32; z = spawn.z/32;
+		}
+	    }
+	    if (x < 0 || x >= cells_x || z < 0 || z >= cells_x) {
+		x = cells_x/2; y = cells_y; z = cells_z/2;
+	    }
 
 	    for(off=-1; off<2; off++) {
 		int y1 = y+off;
@@ -291,8 +327,14 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
     int uid,x,y,z,h,v,b;
     switch (packet_id) {
     case 0x00:
-	print_text("Host:", pkt+2);
-	print_text("MOTD:", pkt+66);
+	if (memcmp(pkt+2, last_srvr, 64) != 0) {
+	    print_text("Host:", pkt+2);
+	    memcpy(last_srvr, pkt+2, 64);
+	}
+	if (memcmp(pkt+66, last_motd, 64) != 0) {
+	    print_text("MOTD:", pkt+66);
+	    memcpy(last_motd, pkt+66, 64);
+	}
 	break;
     case 0x02:
 	spawn.valid = 0;
@@ -350,6 +392,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	    posn.h = h;
 	    posn.v = v;
 	    posn.valid = 1;
+	    if (!spawn.valid) spawn = posn;
 	} else if (uid < 128) {
 	    users[uid].posn.x = x;
 	    users[uid].posn.y = y-29;
@@ -448,7 +491,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	    wbuffer[0] = 0x10;
 	    pad_nbstring(wbuffer+1, "minichat");
 	    wbuffer[65] = 0;
-	    wbuffer[66] = extn_customblocks;
+	    wbuffer[66] = extn_customblocks+3;
 	    write(socket_desc, wbuffer, 67);
 	    if (extn_customblocks) {
 		wbuffer[0] = 0x11;
@@ -459,6 +502,27 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 		wbuffer[68] = 1;
 		write(socket_desc, wbuffer, 69);
 	    }
+	    wbuffer[0] = 0x11;
+	    pad_nbstring(wbuffer+1, "FullCP437");
+	    wbuffer[65] = 0;
+	    wbuffer[66] = 0;
+	    wbuffer[67] = 0;
+	    wbuffer[68] = 1;
+	    write(socket_desc, wbuffer, 69);
+	    wbuffer[0] = 0x11;
+	    pad_nbstring(wbuffer+1, "EmoteFix");
+	    wbuffer[65] = 0;
+	    wbuffer[66] = 0;
+	    wbuffer[67] = 0;
+	    wbuffer[68] = 1;
+	    write(socket_desc, wbuffer, 69);
+	    wbuffer[0] = 0x11;
+	    pad_nbstring(wbuffer+1, "InstantMOTD");
+	    wbuffer[65] = 0;
+	    wbuffer[66] = 0;
+	    wbuffer[67] = 0;
+	    wbuffer[68] = 1;
+	    write(socket_desc, wbuffer, 69);
 	}
 	break;
     case 0x13:
@@ -532,8 +596,12 @@ print_text(char * prefix, uint8_t * str)
 	    putchar(str[i]);
 	else if (str[i] == 0)
 	    printf("\033[C");
+#if defined(__STDC__) && defined(__STDC_ISO_10646__)
+	else if (cp437rom[str[i]] >= 160)
+	    printf("%lc", cp437rom[str[i]]);
+#endif
 	else
-	    putchar('*');
+	    printf("\\%03o", str[i]);
     }
 
     printf("\033[m\n");
@@ -552,6 +620,77 @@ unpad_nbstring(uint8_t * str)
     uint8_t * p = str+63;
     while(p>str && (*p == ' ' || *p == 0)) { *p = 0; p--; }
 }
+
+#if defined(__STDC__) && defined(__STDC_ISO_10646__)
+int cp437rom[256] = {
+    0x0000, 0x263a, 0x263b, 0x2665, 0x2666, 0x2663, 0x2660, 0x2022,
+    0x25d8, 0x25cb, 0x25d9, 0x2642, 0x2640, 0x266a, 0x266b, 0x263c,
+    0x25b6, 0x25c0, 0x2195, 0x203c, 0x00b6, 0x00a7, 0x25ac, 0x21a8,
+    0x2191, 0x2193, 0x2192, 0x2190, 0x221f, 0x2194, 0x25b2, 0x25bc,
+    0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027,
+    0x0028, 0x0029, 0x002a, 0x002b, 0x002c, 0x002d, 0x002e, 0x002f,
+    0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037,
+    0x0038, 0x0039, 0x003a, 0x003b, 0x003c, 0x003d, 0x003e, 0x003f,
+    0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047,
+    0x0048, 0x0049, 0x004a, 0x004b, 0x004c, 0x004d, 0x004e, 0x004f,
+    0x0050, 0x0051, 0x0052, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057,
+    0x0058, 0x0059, 0x005a, 0x005b, 0x005c, 0x005d, 0x005e, 0x005f,
+    0x0060, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067,
+    0x0068, 0x0069, 0x006a, 0x006b, 0x006c, 0x006d, 0x006e, 0x006f,
+    0x0070, 0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077,
+    0x0078, 0x0079, 0x007a, 0x007b, 0x007c, 0x007d, 0x007e, 0x2302,
+    0x00c7, 0x00fc, 0x00e9, 0x00e2, 0x00e4, 0x00e0, 0x00e5, 0x00e7,
+    0x00ea, 0x00eb, 0x00e8, 0x00ef, 0x00ee, 0x00ec, 0x00c4, 0x00c5,
+    0x00c9, 0x00e6, 0x00c6, 0x00f4, 0x00f6, 0x00f2, 0x00fb, 0x00f9,
+    0x00ff, 0x00d6, 0x00dc, 0x00a2, 0x00a3, 0x00a5, 0x20a7, 0x0192,
+    0x00e1, 0x00ed, 0x00f3, 0x00fa, 0x00f1, 0x00d1, 0x00aa, 0x00ba,
+    0x00bf, 0x2310, 0x00ac, 0x00bd, 0x00bc, 0x00a1, 0x00ab, 0x00bb,
+    0x2591, 0x2592, 0x2593, 0x2502, 0x2524, 0x2561, 0x2562, 0x2556,
+    0x2555, 0x2563, 0x2551, 0x2557, 0x255d, 0x255c, 0x255b, 0x2510,
+    0x2514, 0x2534, 0x252c, 0x251c, 0x2500, 0x253c, 0x255e, 0x255f,
+    0x255a, 0x2554, 0x2569, 0x2566, 0x2560, 0x2550, 0x256c, 0x2567,
+    0x2568, 0x2564, 0x2565, 0x2559, 0x2558, 0x2552, 0x2553, 0x256b,
+    0x256a, 0x2518, 0x250c, 0x2588, 0x2584, 0x258c, 0x2590, 0x2580,
+    0x03b1, 0x00df, 0x0393, 0x03c0, 0x03a3, 0x03c3, 0x00b5, 0x03c4,
+    0x03a6, 0x0398, 0x03a9, 0x03b4, 0x221e, 0x03c6, 0x03b5, 0x2229,
+    0x2261, 0x00b1, 0x2265, 0x2264, 0x2320, 0x2321, 0x00f7, 0x2248,
+    0x00b0, 0x2219, 0x00b7, 0x221a, 0x207f, 0x00b2, 0x25a0, 0x00a0
+};
+
+static unsigned char UTFlen[] = {
+    0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    /*             3, 3, 3, 4, 4, 4, 4, 5, 5, 6, 0 // Unicode 2.0 */
+};
+
+int ucs = 0, utf8state = 0;
+
+int
+to_cp437(int ch)
+{
+    if (ch < 0x80) { utf8state = 0; return ch;}
+    if (utf8state == 0 && ch >= 0xC0) {
+	utf8state = UTFlen[ch&0x3F];
+	ucs = (ch&0x1F);
+	if (utf8state == 2) ucs &= 0xF;
+	if (utf8state == 3) ucs &= 0x7;
+    } else if (utf8state != 0 && ch >= 0x80 && ch < 0xC0) {
+	ucs = (ucs << 6) + (ch & 0x3F);
+	utf8state--;
+	if (utf8state == 0) {
+	    int i;
+	    for(i=0; i<256; i++) {
+		if (ucs == cp437rom[i])
+		    return i;
+	    }
+	    return 0xA8;
+	}
+    }
+    return 0;
+}
+#endif
 
 #ifdef ZLIB_VERNUM
 void
