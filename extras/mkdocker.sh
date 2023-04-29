@@ -385,7 +385,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
 	wget curl ca-certificates \
 	binutils git unzip zip build-essential \
-	imagemagick pngcrush p7zip-full \
+	gdb imagemagick pngcrush p7zip-full \
 	gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 \
 	libreadline-dev zlib1g-dev libbz2-dev \
 	libsqlite3-dev libtinfo-dev libssl-dev \
@@ -609,7 +609,7 @@ BEGIN
 export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=Shut_the_fuck_up
 set -x
 set_packages() {
-    PKGS="unzip tini wget curl sqlite3 rlwrap screen ca-certificates"
+    PKGS="unzip tini wget curl sqlite3 gdb rlwrap screen ca-certificates"
     # If mono is already installed use that version
     [ -x /usr/bin/mono ] && return
 

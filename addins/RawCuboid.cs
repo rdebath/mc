@@ -212,7 +212,8 @@ namespace MCGalaxy
         public override string shortcut { get { return "rc"; } }
 
         public override CommandAlias[] Aliases {
-            get { return new [] { new CommandAlias("RawPlace") }; }
+            get { return new [] { new CommandAlias("RawPlace"),
+                    new CommandAlias("rz", "-") }; }
         }
 
         // Which submenu this command displays in under /Help
@@ -382,6 +383,10 @@ namespace MCGalaxy
                         lvl.ClearPhysics();
                         Save_Settings = true;
                         argno++;
+                    } else if (parts[argno].CaselessEq("setspawn") && argno+5 < parts.Length) {
+                        if (!DoSetSpawnCmd(p, ref lvl, parts, argno+1))
+                            break;
+                        argno+=6;
 
                     } else {
                         p.Message("Unknown or short function at offset {0} = {1} {2}", argno, parts[argno], parts.Length);
@@ -765,6 +770,32 @@ namespace MCGalaxy
                 pl.SendCurrentTextures();
             }
             lvl.SaveSettings();
+        }
+
+        bool DoSetSpawnCmd(Player p, ref Level lvl, string[] parts, int pno) {
+
+            Vec3S32 P = new Vec3S32(lvl.Width/2, lvl.Height*3/4, lvl.Length/2);
+            if (!CommandParser.GetCoords(p, parts, pno, ref P))
+                return false;
+
+            int angle = 0;
+            byte yaw = 0;
+            byte pitch = 0;
+            if (CommandParser.GetInt(p, parts[pno+3], "Yaw angle", ref angle, -360, 360))
+                yaw = Orientation.DegreesToPacked(angle);
+            if (CommandParser.GetInt(p, parts[pno+4], "Pitch angle", ref angle, -360, 360))
+                pitch = Orientation.DegreesToPacked(angle);
+
+            p.Message("Spawn location set.");
+            lvl.spawnx = (ushort)P.X;
+            lvl.spawny = (ushort)(P.Y+1);
+            lvl.spawnz = (ushort)P.Z;
+            lvl.rotx = yaw;
+            lvl.roty = pitch;
+
+            lvl.Changed = true;
+            // p.Session.SendSetSpawnpoint(p.Pos, p.Rot); // Hmmm.
+            return true;
         }
 
 

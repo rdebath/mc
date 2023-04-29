@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
@@ -43,13 +44,17 @@ int msgsize[256] = {
 
 typedef struct xyzhv_t xyzhv_t;
 struct xyzhv_t { int x, y, z; int8_t h, v, valid; };
+typedef struct user_list_t user_list_t;
+struct user_list_t { xyzhv_t posn; };
 
 #define World_Pack(x, y, z) (((y) * cells_z + (z)) * cells_x + (x))
 uint8_t * map_blocks = 0;
 uint16_t cells_x, cells_y, cells_z;
 int map_len = 0;
 xyzhv_t posn, spawn;
-int posn_st = 1;
+int dx = 0, dz = 0;
+int posn_st = 1, posn_slower = 0;
+user_list_t users[128];
 
 int disable_cpe = 0;
 int extensions_offered = 0;
@@ -67,6 +72,8 @@ void decompress_start();
 void decompress_block(uint8_t * buf, int len);
 void decompress_end();
 void z_error(int ret);
+void ticker(int socket_desc);
+void move_player(int);
 
 #ifdef ZLIB_VERNUM
 z_stream strm  = { .zalloc = Z_NULL, .zfree = Z_NULL, .opaque = Z_NULL};
@@ -74,6 +81,7 @@ int z_state = 0;
 #endif
 
 int main(int argc , char *argv[]) {
+    srandom(time(0));
     int socket_desc = init_connection(argc, argv);
     int rv = process_connection(socket_desc);
     return rv;
@@ -158,25 +166,7 @@ process_connection(int socket_desc)
 	}
 	if (rv == 0) {
 	    /* TICK: The select timed out, anything to do? */
-
-#if SPINNING
-	    if (posn.valid) {
-		posn.h+=posn_st;
-		if (!posn.h) posn_st = -posn_st;
-		uint8_t wbuffer[256];
-		wbuffer[0] = 8;
-		wbuffer[1] = 255;
-		wbuffer[2] = posn.x>>8;
-		wbuffer[3] = posn.x;
-		wbuffer[4] = (posn.y+29)>>8;	//TODO
-		wbuffer[5] = (posn.y+29);
-		wbuffer[6] = posn.z>>8;
-		wbuffer[7] = posn.z;
-		wbuffer[8] = posn.h;
-		wbuffer[9] = posn.v;
-		write(socket_desc, wbuffer, 10);
-	    }
-#endif
+	    ticker(socket_desc);
 	    continue;
 	}
 
@@ -242,11 +232,63 @@ process_connection(int socket_desc)
 }
 
 void
+ticker(int socket_desc)
+{
+    if (!posn.valid) return;
+    posn_slower = (posn_slower+1)%8;
+    if (!posn_slower) {
+
+	if (map_blocks) {
+	    int x = posn.x/32, y = (posn.y-6)/32, z = posn.z/32;
+	    int off, b[3] = {0,0,0};
+	    x += dx; z += dz; dx=dz=0;
+	    if (x < 0 || x >= cells_x) x = cells_x/2;
+	    if (z < 0 || z >= cells_x) z = cells_z/2;
+
+	    for(off=-1; off<2; off++) {
+		int y1 = y+off;
+		int b1 = 0;
+		if (y1 < 0) b1 = 7; else if (y1 >= cells_y) b1 = 0;
+		else b1 = map_blocks[World_Pack(x, y1, z)];
+		if (b1 == 44 || b1 == 50) b1 = 2;
+		else if (b1 == 8 || b1 == 9 || b1 == 10 || b1 == 11) b1 = 3;
+		else b1 = ! (b1 == 0 || b1 == 6 || b1 == 37 || b1 == 38 ||
+		    b1 == 39 || b1 == 40 || b1 == 51 || b1 == 53 || b1 == 54);
+		b[off+1] = b1;
+	    }
+
+	    int mov = 1;
+	    if (b[1] || b[2]) y++; else if (!b[0]) y--; else mov = 0;
+	    posn.x = x * 32 + 16;
+	    posn.y = y * 32 + 22 - 16*(mov == 0 && b[0] == 2) - 3*(mov == 0 && b[0] == 3);
+	    posn.z = z * 32 + 16;
+	    posn.v = 0;
+	}
+
+	posn.h+=posn_st;
+	if (!posn.h) posn_st = -posn_st;
+    }
+
+    uint8_t wbuffer[256];
+    wbuffer[0] = 8;
+    wbuffer[1] = 255;
+    wbuffer[2] = posn.x>>8;
+    wbuffer[3] = posn.x;
+    wbuffer[4] = (posn.y+29)>>8;
+    wbuffer[5] = (posn.y+29);
+    wbuffer[6] = posn.z>>8;
+    wbuffer[7] = posn.z;
+    wbuffer[8] = posn.h;
+    wbuffer[9] = posn.v;
+    write(socket_desc, wbuffer, 10);
+}
+
+void
 process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 {
     uint8_t wbuffer[256];
 
-    int x,y,z,h,v,b;
+    int uid,x,y,z,h,v,b;
     switch (packet_id) {
     case 0x00:
 	print_text("Host:", pkt+2);
@@ -289,6 +331,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	    map_blocks[World_Pack(x,y,z)] = b;
 	break;
     case 0x07:
+	uid = pkt[1];
 	x = pkt[66]*256+pkt[67];
 	y = pkt[68]*256+pkt[69];
 	z = pkt[70]*256+pkt[71];
@@ -297,25 +340,33 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	{
 	    char buf[256];
 	    sprintf(buf, "User %d @(%.2f,%.2f,%.2f,%d,%d)",
-		    pkt[1], x/32.0,y/32.0,z/32.0,h*360/256,v*360/256);
+		    uid, x/32.0,y/32.0,z/32.0,h*360/256,v*360/256);
 	    print_text(buf, pkt+2);
 	}
-	if (pkt[1] == 255) {
+	if (uid == 255) {
 	    posn.x = x;
 	    posn.y = y-29;
 	    posn.z = z;
 	    posn.h = h;
 	    posn.v = v;
 	    posn.valid = 1;
+	} else if (uid < 128) {
+	    users[uid].posn.x = x;
+	    users[uid].posn.y = y-29;
+	    users[uid].posn.z = z;
+	    users[uid].posn.h = h;
+	    users[uid].posn.v = v;
+	    users[uid].posn.valid = 1;
 	}
 	break;
     case 0x08:
+	uid = pkt[1];
 	x = pkt[2]*256+pkt[3];
 	y = pkt[4]*256+pkt[5];
 	z = pkt[6]*256+pkt[7];
 	h = pkt[8];
 	v = pkt[9];
-	if (pkt[1] == 255) {
+	if (uid == 255) {
 	    printf("TP User %d @(%.2f,%.2f,%.2f,%d,%d)\n",
 		    pkt[1], x/32.0,y/32.0,z/32.0,h*360/256,v*360/256);
 
@@ -326,11 +377,57 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	    posn.v = v;
 	    posn.valid = 1;
 	    if (!spawn.valid) spawn = posn;
+	} else if (uid < 128) {
+	    users[uid].posn.x = x;
+	    users[uid].posn.y = y-7;
+	    users[uid].posn.z = z;
+	    users[uid].posn.h = h;
+	    users[uid].posn.v = v;
+	    users[uid].posn.valid = 1;
+	    move_player(uid);
 	}
-#if 0
-	else printf("MV User %d @(%.2f,%.2f,%.2f,%d,%d)\n",
-		    pkt[1], x/32.0,(y-51)/32.0,z/32.0,h*360/256,v*360/256);
-#endif
+	break;
+    case 0x09:
+	uid = pkt[1];
+	x = pkt[2];
+	y = pkt[3];
+	z = pkt[4];
+	h = pkt[5];
+	v = pkt[6];
+	if (uid < 128) {
+	    users[uid].posn.x += (signed char) x;
+	    users[uid].posn.y += (signed char) y;
+	    users[uid].posn.z += (signed char) z;
+	    users[uid].posn.h = h;
+	    users[uid].posn.v = v;
+	    move_player(uid);
+	}
+	break;
+    case 0x0a:
+	uid = pkt[1];
+	x = pkt[2];
+	y = pkt[3];
+	z = pkt[4];
+	if (uid < 128) {
+	    users[uid].posn.x += (signed char) x;
+	    users[uid].posn.y += (signed char) y;
+	    users[uid].posn.z += (signed char) z;
+	    move_player(uid);
+	}
+	break;
+    case 0x0b:
+	uid = pkt[1];
+	h = pkt[1];
+	v = pkt[2];
+	if (uid < 128) {
+	    users[uid].posn.h = h;
+	    users[uid].posn.v = v;
+	    move_player(uid);
+	}
+	break;
+    case 0x0c:
+	uid = pkt[1];
+	if (uid < 128) users[uid].posn.valid = 0;
 	break;
     case 0x0d:
 	print_text(0, pkt+2);
@@ -371,6 +468,34 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	    sent_customblks = 1;
 	}
 	break;
+    }
+}
+
+void
+move_player(int uid)
+{
+    if (!users[uid].posn.valid) return;
+    int x = users[uid].posn.x;
+    int y = users[uid].posn.y;
+    int z = users[uid].posn.z;
+    int h = users[uid].posn.h;
+    int v = users[uid].posn.v;
+
+#if 0
+    printf("MV User %d @(%.2f,%.2f,%.2f,%d,%d)\n",
+		    uid, x/32.0,(y-51)/32.0,z/32.0,h*360/256,v*360/256);
+#endif
+
+    if (posn.y > y+64 || posn.y < y-64) return;
+    if (abs(posn.x-x) > 46) return;
+    if (abs(posn.z-z) > 46) return;
+    if (abs(posn.x-x) > abs(posn.z-z) && posn.x != x) {
+	dx = posn.x-x; dx = (dx > 0) - (dx < 0);
+    } else if (posn.z != z) {
+	dz = posn.z-z; dz = (dz > 0) - (dz < 0);
+    } else {
+	dz = (random()&2)-1;
+	dx = (random()&2)-1;
     }
 }
 
