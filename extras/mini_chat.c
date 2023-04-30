@@ -4,10 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/time.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
 #include <assert.h>
+#include <math.h>
 
 #if defined(__STDC__) && defined(__STDC_ISO_10646__)
 #include <locale.h>
@@ -57,14 +59,21 @@ struct xyzhv_t { int x, y, z; int8_t h, v, valid; };
 typedef struct user_list_t user_list_t;
 struct user_list_t { xyzhv_t posn; };
 
+#define MAXUSERS 128
+
 #define World_Pack(x, y, z) (((y) * cells_z + (z)) * cells_x + (x))
 uint8_t * map_blocks = 0;
 uint16_t cells_x, cells_y, cells_z;
-int map_len = 0;
+int cells_xyz = 0, map_len = 0;
 xyzhv_t posn, spawn;
 int dx = 0, dz = 0;
-int posn_st = 1, posn_slower = 0;
-user_list_t users[128];
+int posn_st = 1, posn_slower = 0, posn_slower2 = 0;
+user_list_t users[MAXUSERS];
+int nearest_user = -1;
+int64_t nearest_range = 0;
+int nearest_pl_v = 0, nearest_pl_h = 0, nearest_pl_dx = 0, nearest_pl_dz = 0;
+int near_poll = 0;
+struct timeval last_tick;
 
 int disable_cpe = 0;
 int extensions_offered = 0;
@@ -94,7 +103,7 @@ int z_state = 0;
 #endif
 
 int main(int argc , char *argv[]) {
-    srandom(time(0));
+    srandom(time(0) + getpid());
 #if defined(__STDC__) && defined(__STDC_ISO_10646__)
     setlocale(LC_ALL, "");
 #endif
@@ -254,6 +263,11 @@ process_connection(int socket_desc)
 		}
 	    }
 	}
+
+	gettimeofday(&tv, 0);
+	int csec = ((tv.tv_sec*1000000+tv.tv_usec) - (last_tick.tv_sec*1000000+last_tick.tv_usec))/10000;
+	if (csec)
+	    ticker(socket_desc);
     }
 
     if (rv < 0) perror("Network error");
@@ -264,21 +278,37 @@ process_connection(int socket_desc)
 void
 ticker(int socket_desc)
 {
+    gettimeofday(&last_tick, 0);
     if (!posn.valid) return;
+    near_poll = (near_poll+1)%100;
+    if (near_poll == 0) move_player(255);
+
     posn_slower = (posn_slower+1)%8;
     if (!posn_slower) {
 
-	if (map_blocks) {
+	if (map_blocks && cells_xyz != 0) {
 	    int x = posn.x/32, y = (posn.y-6)/32, z = posn.z/32;
 	    int off, b[3] = {0,0,0};
+	    int jumped = (!!dz + !!dx);
+	    if (!jumped && nearest_user >= 0 && nearest_range > (12*32)*(12*32)) {
+		posn_slower2 = (posn_slower2+1)%16;
+		if (posn_slower2 == 0) {
+		    dx = nearest_pl_dx; dz = nearest_pl_dz;
+		    jumped = (!!dz + !!dx);
+		}
+	    }
+
 	    x += dx; z += dz; dx=dz=0;
+
 	    if (x < 0 || x >= cells_x || z < 0 || z >= cells_x) {
 		if (spawn.valid) {
-		    x = spawn.x/32; y = (spawn.y-6)/32; z = spawn.z/32;
+		    x = spawn.x/32; y = spawn.y/32; z = spawn.z/32;
+		    jumped = 1;
 		}
 	    }
 	    if (x < 0 || x >= cells_x || z < 0 || z >= cells_x) {
 		x = cells_x/2; y = cells_y; z = cells_z/2;
+		jumped = 1;
 	    }
 
 	    for(off=-1; off<2; off++) {
@@ -299,10 +329,16 @@ ticker(int socket_desc)
 	    posn.y = y * 32 + 22 - 16*(mov == 0 && b[0] == 2) - 3*(mov == 0 && b[0] == 3);
 	    posn.z = z * 32 + 16;
 	    posn.v = 0;
+	    if (jumped || mov) move_player(255);
 	}
 
 	posn.h+=posn_st;
 	if (!posn.h) posn_st = -posn_st;
+    }
+
+    if (nearest_user >= 0 && nearest_range < (5*32)*(5*32)) {
+	posn.v = nearest_pl_v;
+	posn.h = nearest_pl_h;
     }
 
     uint8_t wbuffer[256];
@@ -337,7 +373,6 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	}
 	break;
     case 0x02:
-	spawn.valid = 0;
 #ifdef ZLIB_VERNUM
 	printf("Loading map\r"); fflush(stdout);
 	decompress_start();
@@ -354,10 +389,11 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	cells_x = pkt[1]*256+pkt[2];
 	cells_y = pkt[3]*256+pkt[4];
 	cells_z = pkt[5]*256+pkt[6];
+	cells_xyz = cells_x*cells_y*cells_z;
 #ifdef ZLIB_VERNUM
 	decompress_end();
 	printf("Loaded map %d,%d,%d\n", cells_x,cells_y,cells_z);
-	if (cells_x*cells_y*cells_z != map_len)
+	if (cells_xyz != map_len)
 	    fprintf(stderr, "WARNING: map len does not match size\n");
 #else
 	printf("Received map %d,%d,%d\n", cells_x,cells_y,cells_z);
@@ -379,10 +415,11 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	z = pkt[70]*256+pkt[71];
 	h = pkt[72];
 	v = pkt[73];
+	if (uid == 255) y += 22;
 	{
 	    char buf[256];
 	    sprintf(buf, "User %d @(%.2f,%.2f,%.2f,%d,%d)",
-		    uid, x/32.0,y/32.0,z/32.0,h*360/256,v*360/256);
+		    uid, x/32.0,(y-51)/32.0,z/32.0,h*360/256,v*360/256);
 	    print_text(buf, pkt+2);
 	}
 	if (uid == 255) {
@@ -392,8 +429,8 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	    posn.h = h;
 	    posn.v = v;
 	    posn.valid = 1;
-	    if (!spawn.valid) spawn = posn;
-	} else if (uid < 128) {
+	    spawn = posn;
+	} else if (uid < MAXUSERS) {
 	    users[uid].posn.x = x;
 	    users[uid].posn.y = y-29;
 	    users[uid].posn.z = z;
@@ -411,7 +448,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	v = pkt[9];
 	if (uid == 255) {
 	    printf("TP User %d @(%.2f,%.2f,%.2f,%d,%d)\n",
-		    pkt[1], x/32.0,y/32.0,z/32.0,h*360/256,v*360/256);
+		    pkt[1], x/32.0,(y-29)/32.0,z/32.0,h*360/256,v*360/256);
 
 	    posn.x = x;
 	    posn.y = y-7;
@@ -420,9 +457,9 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	    posn.v = v;
 	    posn.valid = 1;
 	    if (!spawn.valid) spawn = posn;
-	} else if (uid < 128) {
+	} else if (uid < MAXUSERS) {
 	    users[uid].posn.x = x;
-	    users[uid].posn.y = y-7;
+	    users[uid].posn.y = y-29;
 	    users[uid].posn.z = z;
 	    users[uid].posn.h = h;
 	    users[uid].posn.v = v;
@@ -437,7 +474,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	z = pkt[4];
 	h = pkt[5];
 	v = pkt[6];
-	if (uid < 128) {
+	if (uid < MAXUSERS) {
 	    users[uid].posn.x += (signed char) x;
 	    users[uid].posn.y += (signed char) y;
 	    users[uid].posn.z += (signed char) z;
@@ -451,7 +488,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	x = pkt[2];
 	y = pkt[3];
 	z = pkt[4];
-	if (uid < 128) {
+	if (uid < MAXUSERS) {
 	    users[uid].posn.x += (signed char) x;
 	    users[uid].posn.y += (signed char) y;
 	    users[uid].posn.z += (signed char) z;
@@ -462,7 +499,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	uid = pkt[1];
 	h = pkt[1];
 	v = pkt[2];
-	if (uid < 128) {
+	if (uid < MAXUSERS) {
 	    users[uid].posn.h = h;
 	    users[uid].posn.v = v;
 	    move_player(uid);
@@ -470,7 +507,8 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	break;
     case 0x0c:
 	uid = pkt[1];
-	if (uid < 128) users[uid].posn.valid = 0;
+	if (uid < MAXUSERS) users[uid].posn.valid = 0;
+	if (nearest_user == uid) move_player(255);
 	break;
     case 0x0d:
 	print_text(0, pkt+2);
@@ -536,8 +574,36 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 }
 
 void
+calculate_stare_angle(int player_x, int player_y, int player_z, int tx, int ty, int tz, int * ph, int * pv)
+{
+    int player_eye = 56;
+    int target_eye = 56;
+
+    double dx = tx - player_x;
+    double dy = (ty+target_eye) - (player_y+player_eye);
+    double dz = tz - player_z;
+
+    double range = sqrt(dx*dx+dy*dy+dz*dz);
+    if (range != 0) {
+	double ir = 1/range;
+	dx *= ir; dy *= ir; dz *= ir;
+    }
+
+    double radian2byte = 256 / (2 * M_PI);
+
+    *ph = atan2(dx, -dz) * radian2byte;
+    *pv = asin(-dy) * radian2byte;
+}
+
+void
 move_player(int uid)
 {
+    if (uid == 255) {
+	nearest_user = -1;
+	for(int i=0; i<MAXUSERS; i++)
+	    if(i!=uid && users[i].posn.valid) move_player(i);
+	return;
+    }
     if (!users[uid].posn.valid) return;
     int x = users[uid].posn.x;
     int y = users[uid].posn.y;
@@ -547,16 +613,47 @@ move_player(int uid)
 
 #if 0
     printf("MV User %d @(%.2f,%.2f,%.2f,%d,%d)\n",
-		    uid, x/32.0,(y-51)/32.0,z/32.0,h*360/256,v*360/256);
+		    uid, x/32.0,(y-22)/32.0,z/32.0,h*360/256,v*360/256);
 #endif
+    if (!posn.valid) {
+	nearest_user = -1;
+	return;
+    }
 
-    if (posn.y > y+64 || posn.y < y-64) return;
-    if (abs(posn.x-x) > 46) return;
-    if (abs(posn.z-z) > 46) return;
-    if (abs(posn.x-x) > abs(posn.z-z) && posn.x != x) {
+    int64_t range;
+    {
+	int64_t rx = abs(x - posn.x);
+	int64_t ry = abs(y - posn.y);
+	int64_t rz = abs(z - posn.z);
+	range = rx*rx + ry*ry + rz*rz;
+    }
+    if (nearest_user < 0 || range < nearest_range || nearest_user == uid) {
+	nearest_user = uid;
+	nearest_range = range;
+    }
+    if (uid == nearest_user) {
+	calculate_stare_angle(posn.x, posn.y, posn.z, x, y, z, &nearest_pl_h, &nearest_pl_v);
+	nearest_pl_dx = (posn.x < x) - (x < posn.x);
+	nearest_pl_dz = (posn.z < z) - (z < posn.z);
+	if (abs(posn.z-z) > abs(posn.x-x)*5) nearest_pl_dx = 0;
+	if (abs(posn.x-x) > abs(posn.z-z)*5) nearest_pl_dz = 0;
+	if (abs(posn.x-x) < 32) nearest_pl_dx = 0;
+	if (abs(posn.z-z) < 32) nearest_pl_dz = 0;
+    }
+
+    // Is there someone close?
+    if (abs(posn.y-y) > 96 || abs(posn.x-x) > 46 || abs(posn.z-z) > 46) return;
+    if (posn.z != z && abs(posn.z-z) < abs(posn.x-x)*4 &&
+	posn.x != x && abs(posn.x-x) < abs(posn.z-z)*4)
+    {
+	if (random()&6) { dx = posn.x-x; dx = (dx > 0) - (dx < 0); }
+	if (random()&6) { dz = posn.z-z; dz = (dz > 0) - (dz < 0); }
+    } else if (abs(posn.x-x) > abs(posn.z-z) && posn.x != x) {
 	dx = posn.x-x; dx = (dx > 0) - (dx < 0);
+	if ((random()&7) == 0) dz = (random()&2)-1;
     } else if (posn.z != z) {
 	dz = posn.z-z; dz = (dz > 0) - (dz < 0);
+	if ((random()&7) == 0) dx = (random()&2)-1;
     } else {
 	dz = (random()&2)-1;
 	dx = (random()&2)-1;
@@ -698,9 +795,10 @@ decompress_start()
 {
     if (map_blocks) free(map_blocks);
     map_blocks = 0;
-    map_len = 0;
+    cells_xyz = map_len = 0;
     cells_x = cells_y = cells_z = 0;
     z_state = 0;
+    spawn.valid = 0;
 }
 
 void
@@ -730,9 +828,9 @@ decompress_block(uint8_t * src, int src_len)
 	}
 	if (strm.avail_out == 0) {
 	    map_len = (mini_buf[0] << 24)
-	            + (mini_buf[1] << 16)
-	            + (mini_buf[2] << 8)
-	            + (mini_buf[3]);
+		    + (mini_buf[1] << 16)
+		    + (mini_buf[2] << 8)
+		    + (mini_buf[3]);
 	    if (map_len <= 0) {
 		fprintf(stderr, "Got an illegal map size %d\n", map_len);
 		z_state = -1;
