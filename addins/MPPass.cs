@@ -75,6 +75,7 @@ namespace Core {
 
         public override void Help(Player p) {
             p.Message("%T/MPPass -- Calculate current mppass for ID");
+            p.Message("Use %T/MPPass -salt%S for server secret");
         }
     }
 }

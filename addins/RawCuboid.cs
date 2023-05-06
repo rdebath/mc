@@ -42,7 +42,7 @@ using MCGalaxy.Generator;
 
 namespace MCGalaxy
 {
-    public class Announce: Plugin {
+    public class RawCuboid: Plugin {
         public override string name { get { return "RawCuboid"; } }
         public override string MCGalaxy_Version { get { return "1.9.3.5"; } }
 
