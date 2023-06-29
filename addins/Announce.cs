@@ -27,8 +27,19 @@ namespace Core {
 
             foreach (Player target in online) {
                 if (Chat.Ignoring(target, p)) continue;
-                target.SendCpeMessage(CpeMessageType.SmallAnnouncement, "&8from " +  p.FormatNick(p));
-                target.SendCpeMessage(CpeMessageType.Announcement, message);
+                string[] parts = message.Split('|');
+                string Announcement = parts[0];
+                string SmallAnno = "&8from " +  p.FormatNick(p);
+                string BigAnno = "";
+                if (parts.Length > 1) SmallAnno = parts[1];
+                if (parts.Length > 2) BigAnno = parts[2];
+
+                if (Announcement != "")
+                    target.SendCpeMessage(CpeMessageType.Announcement, Announcement);
+                if (SmallAnno != "")
+                    target.SendCpeMessage(CpeMessageType.SmallAnnouncement, SmallAnno);
+                if (BigAnno != "")
+                    target.SendCpeMessage(CpeMessageType.BigAnnouncement, BigAnno);
             }
         }
 
