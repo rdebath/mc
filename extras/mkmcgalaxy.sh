@@ -3,7 +3,7 @@ if [ -z "$BASH_VERSION" ];then exec bash "$0" "$@";else set +o posix;fi
 ################################################################################
 set -e
 
-# Running under mono.
+# Running under mono (Patches allow all versions to operate)
 #   1.0.0.0 Works
 #   1.8.0.0 Works
 #   1.8.1.0 Works but is numbered 1.8.0.0 (mis-targeted tag)
@@ -14,6 +14,8 @@ set -e
 #   ..1.8.7.5 Need Viewmode.cfg prepopulated
 #   1.8.0.0..1.8.8.1 Emit errors but continue to work.
 #   1.8.8.2 And later appear to be fully working.
+
+# See use of "$COMMITISH" for untagged versions.
 
 #  Ten Bit blocks starts on 1.9.0.5
 #  Websocket starts on 1.9.1.3
@@ -47,8 +49,8 @@ Other possible types include:
     build_parts
 	    Tag specific pieces of the build process.
 
-If MCGalaxy and ClassiCube directories exist in the under
-"$MC" they will be used rather than "git clone".
+If MCGalaxy directory exists in the under
+"$MC" it will be used rather than "git clone".
 !
     exit 0
 }
@@ -63,6 +65,7 @@ main() {
     build*|all|"" ) ;;
 
     [a-z]*.* )
+	SSH_HOST="$1"
 	eval "docker() { ssh $1 docker \"\$@\"; }"
 	shift
 	;;
@@ -72,22 +75,19 @@ main() {
     df ) build "$0" ; exit ;;
 
     build_* ) BUILD="$1" ; shift ;;
-    all|latest ) BUILD="build_$1"; shift ;;
-    master ) BUILD=build_latest ; shift ;;
+    all ) BUILD="build_$1"; shift ;;
+    latest|master ) BUILD=build_latest ; shift ;;
 
     local ) BUILD=build_local_version ; shift ;;
     [0-9]*.* ) BUILD=build_version ;;
 
-    "") if [ -d MCGalaxy -a -d ClassiCube ]
+    "") if [ -d MCGalaxy ]
 	then BUILD=build_default
 	else BUILD=build_latest
 	fi
 	;;
     *) echo >&2 "Unknown option '$1', use 'help' option" ; exit 1 ;;
     esac
-
-    [ -d ClassiCube ] &&
-	git -C ClassiCube rev-parse --short HEAD > ClassiCube/.git-latest
 
     [ -d MCGalaxy ] &&
 	git -C MCGalaxy describe --tags mcgalaxy/master HEAD | fmt | tr '-' ' ' |
@@ -96,7 +96,7 @@ main() {
 	    > MCGalaxy/.git-latest
 
     $BUILD "$@"
-    rm -f ClassiCube/.git-latest MCGalaxy/.git-latest ||:
+    rm -f MCGalaxy/.git-latest ||:
     exit
 }
 
@@ -111,6 +111,22 @@ build_default() {
     FROM=
     MONO_VERSION=
     build_std
+
+    # fetch_lib
+}
+
+fetch_lib() {
+    # Fetch lib directory
+    if [ "$SSH_HOST" != '' ]
+    then
+	ssh "$SSH_HOST" \
+	    'I='"$IMAGE"'; C=$(docker create "$I" :); docker cp $C:/opt/mcgalaxy/lib/. -; docker rm $C>&2' \
+	> /tmp/mcgbin.tar
+    else
+	C=$(docker create "$IMAGE" :)
+	docker cp $C:/opt/mcgalaxy/lib/. ->/tmp/mcgbin.tar
+	docker rm $C>&2
+    fi
 }
 
 build_all() {
@@ -164,6 +180,7 @@ init_setup() {
     LOCALSOURCE=yes
     EXTRAFLAG=
     CHECKOUT=
+    SSH_HOST=
 
     [ -d "$MC" ] || LOCALSOURCE=no
 
@@ -181,13 +198,15 @@ build_std() {
 	DKF="/tmp/_tmp.dockerfile.$$"
 	mkdir -p "$DKF"
 	build "$0" > "$DKF"/Dockerfile
-	tar czf - --exclude=.git -C "$DKF" Dockerfile -C "$MC" \
-	    ClassiCube MCGalaxy |
+	tar czf - --exclude=.git \
+	    -C "$DKF" Dockerfile \
+	    -C "$MC" MCGalaxy |
 	docker build -t "$IMAGE" \
 	    ${TARGET:+"--target=$TARGET"} \
 	    ${FROM:+"--build-arg=FROM=$FROM"} \
 	    $COMPFLG \
 	    $EXTRAFLAG \
+	    --build-arg=UID=$(id -u) \
 	    ${MONO_VERSION:+"--build-arg=MONO_VERSION=$MONO_VERSION"} \
 	    -
 	rm "$DKF"/Dockerfile
@@ -195,31 +214,22 @@ build_std() {
 
     elif [ "$LOCALSOURCE" = yes ]
     then
+	# NB: Some of the early ones have bad tags, don't use local source
+
 	DKF="/tmp/_tmp.dockerfile.$$"
 	mkdir -p "$DKF"
 	build "$0" > "$DKF"/Dockerfile
-	case "$CHECKOUT" in
-	# Some of the early ones have bad tags.
-	1.0.0.0 ) CHECKOUTCOMMIT=877b26159b84b30a4f4fb00a66e4bc1fecafe6e3 ;;
-	1.8.1.0 ) CHECKOUTCOMMIT=78e57fcb227b5d06dcd725bfdd6bbd6cfb4b68c6 ;;
-	1.8.2.0 ) CHECKOUTCOMMIT=f2e7606b805cb75ea7839a4878cab08065be2fec ;;
-	1.8.3.0 ) CHECKOUTCOMMIT=59a5462e47b5d6d8be2f4eff753e6a5ca35bf61c ;;
-	1.8.4.0 ) CHECKOUTCOMMIT=b3b9dae5cb9a74806550e34a4afb06102ecf313f ;;
-
-	* ) CHECKOUTCOMMIT="$CHECKOUT^0" ;;
-	esac
-
 	git worktree remove /tmp/_wt."$CHECKOUT"/MCGalaxy 2>/dev/null ||:
-	git worktree add /tmp/_wt."$CHECKOUT"/MCGalaxy "$CHECKOUTCOMMIT"
+	git worktree add /tmp/_wt."$CHECKOUT"/MCGalaxy "$CHECKOUT^0"
 
 	tar czf - --exclude=.git -C "$DKF" Dockerfile \
-	    -C "$MC" ClassiCube \
 	    -C /tmp/_wt."$CHECKOUT" MCGalaxy |
 	docker build -t "$IMAGE" \
 	    ${TARGET:+"--target=$TARGET"} \
 	    ${FROM:+"--build-arg=FROM=$FROM"} \
 	    $COMPFLG \
 	    $EXTRAFLAG \
+	    --build-arg=UID=$(id -u) \
 	    ${MONO_VERSION:+"--build-arg=MONO_VERSION=$MONO_VERSION"} \
 	    -
 	rm "$DKF"/Dockerfile
@@ -234,6 +244,7 @@ build_std() {
 	    ${FROM:+"--build-arg=FROM=$FROM"} \
 	    $COMPFLG \
 	    $EXTRAFLAG \
+	    --build-arg=UID=$(id -u) \
 	    ${MONO_VERSION:+"--build-arg=MONO_VERSION=$MONO_VERSION"} \
 	    -
     fi
@@ -244,7 +255,7 @@ build_std() {
 build_parts() {
     build_default
 
-    for part in deb_build context serversrc classicube webclient windowsclient
+    for part in deb_build context
     do
 	TARGET="$part"
 	IMAGE=mcgalaxy:"$part"
@@ -354,7 +365,7 @@ ARG GITTAG=
 # To choose one compile for /p:DefineConstants
 ARG COMPILE_FLAGS=
 # Choose a Mono version from mono-project.com, "-" means current.
-# If you blank this out you'll get "mono-devel" from Debian (5.18 in Buster).
+# If you blank this out you'll get "mono-devel" from Debian (5.18 in Buster, 6.8 in bullseye).
 # If $FROM already contains /usr/bin/mono, this has no effect.
 ARG MONO_VERSION=
 
@@ -378,85 +389,29 @@ ARG MONO_VERSION=
 # docker logs mcgalaxy
 
 ################################################################################
-# This is the basic build machine.
-FROM $FROM AS deb_build
-RUN apt-get update && \
-    apt-get upgrade -y --no-install-recommends && \
-    apt-get install -y --no-install-recommends \
-	wget curl ca-certificates \
-	binutils git unzip zip build-essential \
-	gdb imagemagick pngcrush p7zip-full \
-	gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 \
-	libreadline-dev zlib1g-dev libbz2-dev \
-	libsqlite3-dev libtinfo-dev libssl-dev \
-	libpcre2-dev
-
-################################################################################
+# This is a machine to fetch the source
 # I copy the context into a VM so that I can create directories and stop
 # it failing when they don't exist in the context.
-FROM deb_build AS context
-WORKDIR /opt/classicube
-# Do this first, it can be overwritten if it exists in the context.
-RUN [ -f default.zip ] || \
-    wget --progress=dot:mega -O default.zip \
-        http://www.classicube.net/static/default.zip
+#
+FROM $FROM AS context
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+	ca-certificates git
 
-# Recompress the png files ... hard.
-BEGIN
-    mkdir /tmp/default
-    cd /tmp/default
-    unzip -jq /opt/classicube/default.zip
-    for i in *.png
-    do
-	convert "$i" tmp_1.png
-	pngcrush -brute tmp_1.png tmp_2.png
-	[ -s tmp_1.png ] && mv tmp_1.png "$i"
-	rm -f tmp_1.png tmp_2.png
-    done
-
-    mkdir mob
-    for f in skinnedcube.png \
-	    chicken.png creeper.png pig.png pony.png sheep.png \
-	    sheep_fur.png skeleton.png spider.png zombie.png
-    do  [ -f "$f" ] || continue
-	mv "$f" mob/.
-    done
-
-    mkdir gui
-    for f in gui.png gui_classic.png default.png icons.png touch.png
-    do  [ -f "$f" ] || continue
-	mv "$f" gui/.
-    done
-
-    mkdir env
-    for f in particles.png rain.png snow.png clouds.png
-    do  [ -f "$f" ] || continue
-	mv "$f" env/.
-    done
-
-    7z -tzip -mx9 a default-7z.zip -r '*.*'
-    mv default-7z.zip /opt/classicube/default.zip
-COMMIT
+################################################################################
+WORKDIR /opt/mcgalaxy
 
 # Make sure the directories we need exist here, overwrite them by the ones
 # in the context if they exist.
 ARG SERVER
-RUN mkdir -p ${SERVER} ClassiCube
+RUN mkdir -p ${SERVER}
 COPY . .
 
-################################################################################
-FROM deb_build AS serversrc
-
-ARG SERVER
 ARG GITREPO
 ARG GITTAG
 ADD --chown=1000:1000 ${GITREPO}/commits/master.atom .
-WORKDIR /opt/classicube/${SERVER}
 
-# Check if we got source from the context, if not, download it.
-COPY --from=context /opt/classicube/${SERVER} .
-
-WORKDIR /opt/classicube
+WORKDIR /opt/mcgalaxy
 BEGIN
 [ -d ${SERVER} -a ! -e ${SERVER}/${SERVER}.sln ] && {
     # Remove directory if (mostly) empty
@@ -466,134 +421,46 @@ BEGIN
 }
 
 [ ! -e ${SERVER}/${SERVER}.sln -a ".$GITREPO" != '.' ] && {
+    COMMITISH=
+    case "$GITTAG" in
+    # Some of the old ones have bad or missing tags.
+    1.0.0.0 ) COMMITISH=877b26159b84b30a4f4fb00a66e4bc1fecafe6e3 ;;
+    1.0.0.1 ) COMMITISH=f5c656a38d7e711249ea93615b1aa99a288f583c ;;
+    1.0.0.2 ) COMMITISH=c1ee045b888c687a802cce78147f6392a02e114e ;;
+    1.0.3.1 ) COMMITISH=7fa4f7c2938ad97959baa352dbf0e0cff3f094ff ;;
+    1.5.0.7 ) COMMITISH=5182a1a2dd1f18cd6f5d0c1de615499dc8236d3e ;;
+    1.5.0.8 ) COMMITISH=261cd468dee00a5060629c584c742e292b66de11 ;;
+    1.5.1.0 ) COMMITISH=b32a63fc5ee9c9398ac7a24b53668f9220b55a9c ;;
+    1.5.1.1 ) COMMITISH=d3e7fe60e0451c60e84ee5e4fcc565a37c9c38af ;;
+    1.5.1.2 ) COMMITISH=568632bb81c8ee058f991d1b05cf5030c899133a ;;
+    1.6.0.0 ) COMMITISH=d4fa2d2bd5ca807e70998aba7cc0b296eea1848a ;;
+    1.6.0.2 ) COMMITISH=afcd10e8995aca745521ecdf040729b0ccc1170f ;;
+    1.6.9.0 ) COMMITISH=005232abd4f48fb2def723b73e95662cc4ef5efe ;;
+    1.7.0.0 ) COMMITISH=92e13ddc6034fb9af41ccb6b378005b64c0b270a ;;
+    1.7.3.0 ) COMMITISH=0fa039edb6309f29376cc00a38dedbb2de3587bc ;;
+    1.8.1.0 ) COMMITISH=78e57fcb227b5d06dcd725bfdd6bbd6cfb4b68c6 ;;
+    1.8.2.0 ) COMMITISH=f2e7606b805cb75ea7839a4878cab08065be2fec ;;
+    1.8.3.0 ) COMMITISH=59a5462e47b5d6d8be2f4eff753e6a5ca35bf61c ;;
+    1.8.4.0 ) COMMITISH=b3b9dae5cb9a74806550e34a4afb06102ecf313f ;;
+    1.8.9.2 ) COMMITISH=b5a4a8a8ae06af7a0aa807958ec18fc57cc24864 ;;
+    1.9.0.3 ) COMMITISH=f32b0135e7cc3ac2f113c9b76b84f448ef47d860 ;;
+    1.9.1.1 ) COMMITISH=2b5911ce04158f269452cf4fa5e657d07bbf905e ;;
+    1.9.2.1 ) COMMITISH=961cf05972ee95af7ddf77a1925cae70b0a9788f ;;
+    1.9.2.4 ) COMMITISH=816d52b6ad4a912ae748e7ce9f98d09be711d969 ;;
+    esac
+
     git config --global advice.detachedHead false # STFU
-    git clone --depth 1 "$GITREPO".git ${SERVER} ${GITTAG:+ -b "${GITTAG}"}
+    if [ "$COMMITISH" = '' ]
+    then git clone --depth 1 "$GITREPO".git ${SERVER} ${GITTAG:+ -b "${GITTAG}"}
+    else
+	git clone "$GITREPO".git ${SERVER}
+	git -C ${SERVER} checkout "$COMMITISH"
+    fi
     [ "$GITTAG" != '' ] &&
-	echo >&2 Cloned using id "$GITTAG"
-    rm -f "$HOME"/.gitconfig ||:
+	echo >&2 Cloned using id "$GITTAG" $COMMITISH
+    rm -rf "$HOME"/.gitconfig ${SERVER}/.git ||:
 }
 :
-COMMIT
-
-################################################################################
-FROM deb_build AS classicube
-# Download ClassiCube if there's no source in the context.
-WORKDIR /opt/classicube/ClassiCube
-COPY --from=context /opt/classicube/ClassiCube .
-RUN [ -d src ] || \
-    git clone --depth=1 https://github.com/UnknownShadow200/ClassiCube.git .
-
-################################################################################
-FROM deb_build AS windowsclient
-# The build VM has windows cross compilers.
-ENV ROOT_DIR=/opt/classicube
-WORKDIR $ROOT_DIR
-COPY --from=classicube /opt/classicube/ClassiCube .
-
-################################################################################
-BEGIN
-WIN32_CC="i686-w64-mingw32-gcc"
-WIN64_CC="x86_64-w64-mingw32-gcc"
-WIN32_FLAGS="-mwindows -nostartfiles -Wl,-e_main_real -DCC_NOMAIN"
-WIN64_FLAGS="-mwindows -nostartfiles -Wl,-emain_real -DCC_NOMAIN"
-ALL_FLAGS="-O1 -s -fno-stack-protector -fno-math-errno -Qn -w"
-
-build_win32() {
-  echo "Building win32.."
-  cp $ROOT_DIR/misc/CCicon_32.res $ROOT_DIR/src/CCicon_32.res
-
-  EXE=ClassiCube.32.exe
-  rm -f "$EXE" ||:
-  $WIN32_CC *.c $ALL_FLAGS $WIN32_FLAGS -o "$EXE" CCicon_32.res -DCC_COMMIT_SHA=\"$LATEST\" -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32
-
-  echo "Building win32 OpenGL.."
-  EXE=ClassiCube.32-opengl.exe
-  rm -f "$EXE" ||:
-  $WIN32_CC *.c $ALL_FLAGS $WIN32_FLAGS -o "$EXE" CCicon_32.res -DCC_COMMIT_SHA=\"$LATEST\" -DCC_BUILD_MANUAL -DCC_BUILD_WIN -DCC_BUILD_GL -DCC_BUILD_WINGUI -DCC_BUILD_WGL -DCC_BUILD_WINMM -DCC_BUILD_WININET -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32 -lopengl32
-
-}
-
-build_win64() {
-  echo "Building win64.."
-  cp $ROOT_DIR/misc/CCicon_64.res $ROOT_DIR/src/CCicon_64.res
-  
-  EXE=ClassiCube.64.exe
-  rm -f "$EXE" ||:
-  $WIN64_CC *.c $ALL_FLAGS $WIN64_FLAGS -o "$EXE" CCicon_64.res -DCC_COMMIT_SHA=\"$LATEST\" -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32
-
-  echo "Building win64 OpenGL.."
-  EXE=ClassiCube.64-opengl.exe
-  rm -f "$EXE" ||:
-  $WIN64_CC *.c $ALL_FLAGS $WIN64_FLAGS -o "$EXE" CCicon_64.res -DCC_COMMIT_SHA=\"$LATEST\" -DCC_BUILD_MANUAL -DCC_BUILD_WIN -DCC_BUILD_GL -DCC_BUILD_WINGUI -DCC_BUILD_WGL -DCC_BUILD_WINMM -DCC_BUILD_WININET -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32 -lopengl32
-
-  if grep -q HACKEDCLIENT *.c
-  then
-      echo "Building win64 hacked.."
-      EXE=ClassiCube.64-hack.exe
-      rm -f "$EXE" ||:
-      $WIN64_CC -D'HACKEDCLIENT(x)=x' *.c $ALL_FLAGS $WIN64_FLAGS -o "$EXE" CCicon_64.res -DCC_COMMIT_SHA=\"$LATEST\" -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32
-  fi
-}
-
-if [ -d .git ]
-then LATEST=$(git rev-parse --short HEAD || cat .git-latest || echo unknown)
-else LATEST=$(cat .git-latest || echo unknown)
-fi
-cd $ROOT_DIR/src
-
-build_win32
-build_win64
-
-COMMIT
-
-################################################################################
-FROM emscripten/emsdk AS webclient
-# Using a different VM to build the web version of classicube.
-COPY --from=classicube /opt/classicube/ClassiCube .
-COPY --from=context /opt/classicube/default.zip texpacks/default.zip
-
-################################################################################
-BEGIN
-set -x
-LATEST=$(git rev-parse --short HEAD || cat .git-latest)
-LATEST="${LATEST:+-DCC_COMMIT_SHA=\"$LATEST\"}"
-
-[ -f src/interop_web.js ] && JLIB='--js-library src/interop_web.js'
-emcc \
-    src/*.c \
-    -w -O1 \
-    -o cc.js \
-    $JLIB \
-    "$LATEST" \
-    -s WASM=1 \
-    -s LEGACY_VM_SUPPORT=1 \
-    -s ALLOW_MEMORY_GROWTH=1 \
-    -s ABORTING_MALLOC=0 \
-    -s ERROR_ON_UNDEFINED_SYMBOLS=1 \
-    --preload-file texpacks/default.zip
-
-#-------------------------------------------------------------------------------
-# fix mouse wheel scrolling page not being properly prevented
-# "[Intervention] Unable to preventDefault inside passive event listener
-# due to target being treated as passive."
-[ -f cc.js ] && {
-    echo >&2 Patching cc.js ...
-    cp -p cc.js cc.js.orig
-    sed -i 's#eventHandler.useCapture);#{ useCapture: eventHandler.useCapture, passive: false });#g' cc.js
-
-    diff -u cc.js.orig cc.js ||:
-    rm -f cc.js.orig ||:
-}
-
-:
-#-------------------------------------------------------------------------------
-# Notes
-# -g4 -> C source shown in browser.
-# -s WASM=1 \	-- "WebAssembly" is undefined on slow browser (IE).
-# -s SINGLE_FILE=1 \
-#
-#  -ldylink.js -lbrowser.js
-# Also see misc/buildbot.sh
 COMMIT
 
 ################################################################################
@@ -606,7 +473,7 @@ FROM $FROM
 ARG MONO_VERSION
 ################################################################################
 BEGIN
-export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=Shut_the_fuck_up
+export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=STFU
 set -x
 set_packages() {
     PKGS="unzip tini wget curl sqlite3 gdb rlwrap screen ca-certificates"
@@ -717,21 +584,18 @@ ARG SERVER
 ARG UID=1000
 RUN U=user ; useradd $U -u $UID -d /home/$U -m -l
 
-WORKDIR /opt
-COPY --from=context --chown=user:user /opt/classicube/default.zip /opt/classicube/default.zip
-COPY --from=webclient --chown=user:user /src/cc.* /opt/classicube/webclient/
-COPY --from=windowsclient --chown=user:user /opt/classicube/src/*.exe /opt/classicube/client/
-COPY --from=serversrc --chown=user:user /opt/classicube/${SERVER} /opt/classicube/${SERVER}
-
-WORKDIR /opt/classicube
+WORKDIR /opt/mcgalaxy
+RUN chown 1000:1000 .
 USER user
+
+COPY --from=context --chown=user:user /opt/mcgalaxy/${SERVER} /opt/mcgalaxy/${SERVER}
 
 ################################################################################
 # Create the build.sh script
 BEGIN build.sh 'chmod +x build.sh'
 #!/bin/sh
 set -e
-O=/opt/classicube
+O=/opt/mcgalaxy
 cd "$O"
 [ -e ${SERVER}/${SERVER}.sln ] || {
     echo 'Nothing found to build, will download binaries at runtime' >&2
@@ -790,11 +654,21 @@ cd "$O/${SERVER}"
     sed -i '/Path.GetFileName(Assembly.GetExecutingAssembly().Location);/s::Assembly.GetExecutingAssembly().Location; //PATCH:' \
 	${SERVER}/Modules/Compiling/Compiler.cs
 
+################################################################################
 # Insert a detailed version if available.
 # Not cannot change "InternalVersion" or "Version" as it's format is fixed.
 [ -f .git-latest ] && [ -f ${SERVER}/Server/Server.Fields.cs ] &&
     sed -i '/string fullName;/s:;: = "'"$SERVER $(cat .git-latest)"'"; //PATCH:' \
       ${SERVER}/Server/Server.Fields.cs
+
+################################################################################
+# Make initial setup less noisy
+[ -f ${SERVER}/Player/List/PlayerList.cs ] &&
+    sed -i '/Logger.Log(LogType.SystemActivity, "CREATED NEW:/s;^;//PATCH:;' \
+	${SERVER}/Player/List/PlayerList.cs
+[ -f ${SERVER}/Player/List/PlayerExtList.cs ] &&
+    sed -i '/Logger.Log(LogType.SystemActivity, "CREATED NEW:/s;^;//PATCH:;' \
+	${SERVER}/Player/List/PlayerExtList.cs
 
 ################################################################################
 # These patches are needed for older versions.
@@ -858,6 +732,20 @@ cd "$O/${SERVER}"
 	    Server/Server.cs
 	sed -i '/Log("Starting Server");/{n;s/^ *{/if(false){\/\/PATCH/;}' \
 	    Server/Server.cs
+	sed -i '/UpdateGlobalSettings();/s/^/\/\/PATCH/' \
+	    Server/Server.cs
+	sed -i '/bool UseGlobalChat = true;/s/true/false/' \
+	    Server/Server.cs
+    }
+    [ -f Server.cs ] && {
+	sed -i '/if.*File.Exists.*\.dll.*[^{]*$/s/^/if(false) \/\/PATCH/' \
+	    Server.cs
+	sed -i '/UpdateStaffList();/s/^/\/\/PATCH/' \
+	    Server.cs
+	sed -i '/UpdateGlobalSettings();/s/^/\/\/PATCH/' \
+	    Server.cs
+	sed -i '/bool UseGlobalChat = true;/s/true/false/' \
+	    Server.cs
     }
     [ -f Server/Server.Tasks.cs ] && {
 	sed -i '/ml.Queue(UpdateStaffListTask);/s/^/\/\/PATCH/' \
@@ -877,6 +765,14 @@ cd "$O/${SERVER}"
     }
 }
 ################################################################################
+# Bugs
+
+# [ -f GUI/Popups/PortTools.Designer.cs ] && {
+#     sed -i '/System.EventHandler(this.LblInfoClick);/s/^/\/\/PATCH/' \
+# 	GUI/Popups/PortTools.Designer.cs
+# }
+
+################################################################################
 
 echo >&2 Patches applied ...
 
@@ -892,6 +788,7 @@ for XFILE in \
     CLI/Program.cs \
     Commands/Information/CmdInfo.cs \
     GUI/Program.cs \
+    GUI/Popups/PortTools.Designer.cs \
     Network/ClassiCube.cs \
     Player/Player.cs \
     Program.cs \
@@ -1085,13 +982,24 @@ BEGIN start_server 'chmod +x start_server'
 #!/bin/sh
 set -e
 export LANG=C.UTF-8
-O=/opt/classicube
+O=/opt/mcgalaxy
 export PREFIX="$O/lib"
 export VERSION=$(awk '{gsub("[v \r]*","",$0);print $0;exit;}' "$O"/lib/Changelog.txt )
 MONO=mono
 
+edit_prop() {
+    PROPS=properties/server.properties ; PROP=$1 ; VAL=$2
+    [ "$VAL" = '' ] && return;
+    mkdir -p properties
+    [ -f $PROPS ] || touch $PROPS
+    grep -q '^'"$PROP"' *=' $PROPS || echo "$PROP" = $VAL >> $PROPS
+    sed -i -s '/^'"$PROP"' *=/s/=.*/= '"$VAL"'/' $PROPS
+}
+
 # Use this to change env variables, ulimit settings etc.
 [ -f mono_env ] && . ./mono_env
+
+edit_prop port "$MCG_PORT"
 
 [ "$1" = rcmd ] && {
     {
@@ -1183,17 +1091,6 @@ SERVEREXE="$RUNDIR/${SERVER}"CLI.exe
 [ ! -f "$PREFIX/${SERVER}CLI.exe" ] && [ -f "$PREFIX/${SERVER}.exe" ] &&
     SERVEREXE="$RUNDIR/${SERVER}.exe"
 
-# Populate the webclient dir
-[ -d "$O"/client ] && {
-    mkdir -p webclient
-    case "$VERSION" in
-    1.8.*|1.9.0.*|1.9.1.[012] ) ;;
-    *) cp -a "$O"/webclient/. webclient/. ;;
-    esac
-    cp -a "$O"/client/. webclient/.
-    cp -p "$O"/default.zip webclient/.
-}
-
 # Work around docker bug. (tty size is updated late)
 [ "$(stty size 2>/dev/null)" = "0 0" ] && {
     for i in 1 2 3 4 5 ; do [ "$(stty size)" = "0 0" ] && sleep 1 ; done
@@ -1235,5 +1132,5 @@ WORKDIR /home/user
 ARG SERVER
 ENV SERVER=${SERVER}
 EXPOSE 25565
-CMD [ "sh","/opt/classicube/start_server"]
+CMD [ "sh","/opt/mcgalaxy/start_server"]
 
