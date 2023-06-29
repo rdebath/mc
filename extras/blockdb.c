@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 700
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -16,9 +17,15 @@
  */
 
 /*
- * Newest: Get the newest known block Id
- * Oldest: Get the oldest known block Id
+ * These are physics visuals only.
+ * newest: Get the newest known block Id, after of last change
+ * oldest: Get the oldest known block Id, before of first change.
  * deleteblocks: Set all blocks that have been modified to Air.
+ * filtered_new: newest block if it differs from oldest block.
+ *
+ * allblocks: Show a /pl command for evey update. (incl physics)
+ * perday: recreate cbdb as a one change per day file.
+ * last_order: Newest block in order they are set in file (incl physics)
  */
 
 FILE * ofd;
@@ -49,6 +56,7 @@ static enum { newest = 0, oldest = 1, deleteblocks = 2, filtered_new = 3, allblo
     } method = newest;
 int guest = 0;
 
+int use_visuals = -1;
 char physics_visual[256] = {
   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
  16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
@@ -68,6 +76,9 @@ char physics_visual[256] = {
  29, 22, 10, 22, 22, 41, 19, 35, 21, 29, 49, 34, 16, 41,  0, 22
 };
 
+time_t filt_sdate = 0;
+time_t filt_edate = 0;
+
 void main(int argc, char **argv)
 {
     char * filename = 0;
@@ -86,10 +97,29 @@ void main(int argc, char **argv)
 	if (strcmp(argv[0], "-A") == 0) { method = allblocks; continue; }
 	if (strcmp(argv[0], "-g") == 0) { guest = 1; continue; }
 	if (strcmp(argv[0], "-y") == 0) { method = perday; continue; }
+	if (strncmp(argv[0], "-sdate=", 7) == 0 || strncmp(argv[0], "-edate=", 7) == 0) {
+	    struct tm *ptm, tm={.tm_isdst = -1};
+	    ptm = getdate(argv[0]+7);
+	    if (!ptm) strptime(argv[0]+7, "%Y-%m-%d %H:%M:%S", ptm=&tm);
+	    time_t t = mktime(ptm);
+	    if (t == (time_t)-1) {
+		fprintf(stderr, "Date \"%s\" invalid\n", argv[0]+7);
+		exit(1);
+	    }
+	    if (argv[0][1] == 's') {
+		filt_sdate = t;
+		if (filt_edate == 0) time(&filt_edate);
+	    } else filt_edate = t;
+	    continue;
+	}
 	fprintf(stderr, "Unknown option %s\n", argv[0]);
 	exit(1);
     }
     if (argc>1) filename = argv[1];
+
+    if (use_visuals < 0) {
+	use_visuals = !(method == allblocks || method == last_order || method == perday);
+    }
 
     if (filename) {
 	FILE * ifd = fopen(filename, "r");
@@ -187,16 +217,20 @@ do_file_1(FILE * ifd)
 	time_t unix_ts = (time_t)1262304000 + Timestamp;
 	int Type = UIntLE16(chunk_buf+14) & 0xFFF;
 
+	if (filt_edate>filt_sdate && (unix_ts < filt_sdate || unix_ts > filt_edate))
+	{
+	    //printf("%d..%d -> %d\n", filt_sdate, filt_edate, unix_ts);
+	    continue;
+	}
+
 	int OldBlock = chunk_buf[12];
 	OldBlock |= ((chunk_buf[15]&0x40)<<2);
 	OldBlock |= ((chunk_buf[15]&0x10)<<5);
-	if (method == allblocks || method == last_order || method == last_scan) {
-	    if (OldBlock >= 66 && OldBlock < 256 ) OldBlock += PHYSICS_OFFSET;
-	    else if (OldBlock >= 256) OldBlock -= 256;
-	} else {
-	    if (OldBlock >= 66 && OldBlock < 256 ) OldBlock = physics_visual[OldBlock];
-	    else if (OldBlock >= 256) OldBlock -= 256;
-	}
+	if (OldBlock >= 66 && OldBlock < 256 ) OldBlock += PHYSICS_OFFSET;
+	else if (OldBlock >= 256) OldBlock -= 256;
+
+	if (use_visuals && OldBlock >= PHYSICS_OFFSET)
+	    OldBlock = physics_visual[OldBlock & 0xFF];
 	if (guest) {
 	    if (OldBlock == 7) OldBlock = 49;
 	    else if (OldBlock == 8 || OldBlock == 10 ) OldBlock++;
@@ -208,16 +242,12 @@ do_file_1(FILE * ifd)
 	if (NewBlock >= 66 && NewBlock < 256 ) NewBlock += PHYSICS_OFFSET;
 	else if (NewBlock >= 256) NewBlock -= 256;
 
-#if 1
-	if (!(method == allblocks || method == last_order || method == last_scan)) {
-	    if (NewBlock >= PHYSICS_OFFSET && NewBlock < MAX_COUNT)
-		NewBlock = physics_visual[NewBlock & 0xFF];
-	}
+	if (use_visuals && NewBlock >= PHYSICS_OFFSET)
+	    NewBlock = physics_visual[NewBlock & 0xFF];
 	if (guest) {
 	    if (NewBlock == 7) NewBlock = 49;
 	    else if (NewBlock == 8 || NewBlock == 10 ) NewBlock++;
 	}
-#endif
 
 	// if (NewBlock == 54) NewBlock = OldBlock;
 	// if (NewBlock == 54) continue;
@@ -369,6 +399,9 @@ do_file_2(FILE * ifd)
         uint32_t Index = UIntLE32(chunk_buf+8);
         time_t unix_ts = (time_t)1262304000 + Timestamp;
         int Type = UIntLE16(chunk_buf+14) & 0xFFF;
+
+	if (filt_edate>filt_sdate && (unix_ts < filt_sdate || unix_ts > filt_edate))
+	    continue;
 
         int OldBlock = chunk_buf[12];
         OldBlock |= ((chunk_buf[15]&0x40)<<2);
