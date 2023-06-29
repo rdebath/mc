@@ -65,7 +65,7 @@ struct user_list_t { xyzhv_t posn; };
 uint8_t * map_blocks = 0;
 uint16_t cells_x, cells_y, cells_z;
 int cells_xyz = 0, map_len = 0;
-xyzhv_t posn, spawn;
+xyzhv_t posn, spawn, last_sent_posn;
 int dx = 0, dz = 0;
 int posn_st = 1, posn_slower = 0, posn_slower2 = 0;
 user_list_t users[MAXUSERS];
@@ -73,7 +73,6 @@ int nearest_user = -1;
 int64_t nearest_range = 0;
 int nearest_pl_v = 0, nearest_pl_h = 0, nearest_pl_dx = 0, nearest_pl_dz = 0;
 int near_poll = 0;
-struct timeval last_tick;
 
 int disable_cpe = 0;
 int extensions_offered = 0;
@@ -91,8 +90,12 @@ void decompress_start();
 void decompress_block(uint8_t * buf, int len);
 void decompress_end();
 void z_error(int ret);
-void ticker(int socket_desc);
 void move_player(int);
+
+#ifndef NO_TICKER
+struct timeval last_tick;
+void ticker(int socket_desc);
+#endif
 
 char last_motd[64];
 char last_srvr[64];
@@ -194,7 +197,9 @@ process_connection(int socket_desc)
 	}
 	if (rv == 0) {
 	    /* TICK: The select timed out, anything to do? */
+#ifndef NO_TICKER
 	    ticker(socket_desc);
+#endif
 	    continue;
 	}
 
@@ -264,10 +269,12 @@ process_connection(int socket_desc)
 	    }
 	}
 
+#ifndef NO_TICKER
 	gettimeofday(&tv, 0);
 	int csec = ((tv.tv_sec*1000000+tv.tv_usec) - (last_tick.tv_sec*1000000+last_tick.tv_usec))/10000;
 	if (csec)
 	    ticker(socket_desc);
+#endif
     }
 
     if (rv < 0) perror("Network error");
@@ -275,6 +282,7 @@ process_connection(int socket_desc)
     return (rv<0);
 }
 
+#ifndef NO_TICKER
 void
 ticker(int socket_desc)
 {
@@ -341,6 +349,17 @@ ticker(int socket_desc)
 	posn.h = nearest_pl_h;
     }
 
+    if (last_sent_posn.valid &&
+	last_sent_posn.x == posn.x &&
+	last_sent_posn.y == posn.y &&
+	last_sent_posn.z == posn.z &&
+	last_sent_posn.h == posn.h &&
+	last_sent_posn.v == posn.v)
+	return;
+
+    last_sent_posn = posn;
+    last_sent_posn.valid = 1;
+
     uint8_t wbuffer[256];
     wbuffer[0] = 8;
     wbuffer[1] = 255;
@@ -354,6 +373,7 @@ ticker(int socket_desc)
     wbuffer[9] = posn.v;
     write(socket_desc, wbuffer, 10);
 }
+#endif
 
 void
 process_packet(int packet_id, uint8_t * pkt, int socket_desc)
