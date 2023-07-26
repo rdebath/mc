@@ -57,7 +57,7 @@ int to_cp437(int ch);
 typedef struct xyzhv_t xyzhv_t;
 struct xyzhv_t { int x, y, z; int8_t h, v, valid; };
 typedef struct user_list_t user_list_t;
-struct user_list_t { xyzhv_t posn; };
+struct user_list_t { xyzhv_t posn; char name[65]; };
 
 #define MAXUSERS 128
 
@@ -69,8 +69,10 @@ xyzhv_t posn, spawn, last_sent_posn;
 int jmp_dx = 0, jmp_dz = 0;
 int posn_st = 0, posn_slower = 0;
 user_list_t users[MAXUSERS];
-int nearest_user = -1;
-int64_t nearest_range = 0;
+char my_user_name[65];
+int nearest_user = -1, nearest_is_clone = 0;
+int64_t nearest_range = 0, nearest_crange;
+#define sq_range(R) (((R)*32)*((R)*32))
 int nearest_pl_v = 0, nearest_pl_h = 0, nearest_pl_dx = 0, nearest_pl_dz = 0;
 int near_poll = 0;
 
@@ -84,6 +86,7 @@ int extn_longermessages = 0;
 int init_connection(int argc , char *argv[]);
 int process_connection();
 void process_packet(int packet_id, uint8_t * pkt, int socket_desc);
+void process_user_message(int socket_desc, char * txbuf);
 void print_text(char * prefix, uint8_t * str);
 void pad_nbstring(uint8_t * dest, const char * str);
 void unpad_nbstring(uint8_t * str);
@@ -92,6 +95,7 @@ void decompress_block(uint8_t * buf, int len);
 void decompress_end();
 void z_error(int ret);
 void move_player(int);
+int is_clone(char * my_name, char * their_name);
 void send_pkt_ident(int socket_desc, char * userid, char * mppass);
 void send_pkt_move(int socket_desc, xyzhv_t posn);
 void send_pkt_setblock(int socket_desc, int x, int y, int z, int block);
@@ -212,7 +216,7 @@ process_connection(int socket_desc)
 	    if (rv > 0) {
 		if (txbuf[rv-1] == '\n') rv--;
 		txbuf[rv] = 0;
-		send_pkt_message(socket_desc, txbuf);
+		process_user_message(socket_desc, txbuf);
 	    }
 	}
 
@@ -288,7 +292,7 @@ ticker(int socket_desc)
 	    int jumped = (!!jmp_dz + !!jmp_dx);
 
 	    // Slowly move toward distant users.
-	    if (!jumped && nearest_user >= 0 && nearest_range > (12*32)*(12*32)) {
+	    if (!jumped && nearest_user >= 0 && nearest_range > sq_range(12)) {
 		xoff += nearest_pl_dx; zoff += nearest_pl_dz;
 	    }
 
@@ -336,7 +340,7 @@ ticker(int socket_desc)
 	if (!posn.h) posn_st = -posn_st;
     }
 
-    if (nearest_user >= 0 && nearest_range < (5*32)*(5*32)) {
+    if (nearest_user >= 0 && nearest_range < sq_range(5) && !nearest_is_clone) {
 	posn.v = nearest_pl_v;
 	posn.h = nearest_pl_h;
 	posn_st = 0;
@@ -424,6 +428,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 		    uid, x/32.0,(y-51)/32.0,z/32.0,h*360/256,v*360/256);
 	    print_text(buf, pkt+2);
 	}
+	unpad_nbstring(pkt+2);
 	if (uid == 255) {
 	    posn.x = x;
 	    posn.y = y-29;
@@ -432,6 +437,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	    posn.v = v;
 	    posn.valid = 1;
 	    spawn = posn;
+	    memcpy(my_user_name, pkt+2, sizeof(my_user_name));
 	} else if (uid < MAXUSERS) {
 	    users[uid].posn.x = x;
 	    users[uid].posn.y = y-29;
@@ -439,6 +445,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	    users[uid].posn.h = h;
 	    users[uid].posn.v = v;
 	    users[uid].posn.valid = 1;
+	    memcpy(users[uid].name, pkt+2, sizeof(users[uid].name));
 	}
 	break;
     case 0x08:
@@ -586,16 +593,21 @@ move_player(int uid)
 	return;
     }
 
-    int64_t range;
+    int64_t range, crange;
+    int isclone = 0;
     {
 	int64_t rx = abs(x - posn.x);
 	int64_t ry = abs(y - posn.y);
 	int64_t rz = abs(z - posn.z);
-	range = rx*rx + ry*ry + rz*rz;
+	crange = range = rx*rx + ry*ry + rz*rz;
+	isclone = is_clone(my_user_name, users[uid].name);
+	if (isclone) crange *= 1048576;
     }
-    if (nearest_user < 0 || range < nearest_range || nearest_user == uid) {
+    if (nearest_user < 0 || crange < nearest_crange || nearest_user == uid) {
 	nearest_user = uid;
 	nearest_range = range;
+	nearest_crange = crange;
+	nearest_is_clone = isclone;
     }
     if (uid == nearest_user) {
 	calculate_stare_angle(posn.x, posn.y, posn.z, x, y, z, &nearest_pl_h, &nearest_pl_v);
@@ -624,6 +636,24 @@ move_player(int uid)
 	jmp_dz = (random()&2)-1;
 	jmp_dx = (random()&2)-1;
     }
+}
+
+int
+is_clone(char * my_name, char * their_name)
+{
+    // Are the two usernames "similar" ?
+    char *m, *t;
+    for(m=my_name, t=their_name; *t && *m; )
+    {
+	if (*m == '&' && m[1] != 0) {m+=2; continue;}
+	if (*t == '&' && t[1] != 0) {t+=2; continue;}
+	if (*t >= '0' && *t <= '9' && *m >= '0' && *m <= '9')
+	    return 1;
+	if (*t != *m)
+	    return 0;
+	m++; t++;
+    }
+    return 1;
 }
 
 void
@@ -957,6 +987,22 @@ static struct tx_extn { char extname[65]; uint8_t vsn; } extns[] =
 }
 
 void
+process_user_message(int socket_desc, char * txbuf)
+{
+    char cmd[64], xtra[64];
+    int b, x, y, z;
+
+    // Convert a "/pl" command into a setblock packet
+    if (sscanf(txbuf, "/%.60s %d %d %d %d %.60s", cmd, &b, &x, &y, &z, xtra) == 5) {
+	if (b >= 0 && b < 66 && strcasecmp(cmd, "pl") == 0) {
+	    send_pkt_setblock(socket_desc, x, y, z, b);
+	    return;
+	}
+    }
+    send_pkt_message(socket_desc, txbuf);
+}
+
+void
 send_pkt_message(int socket_desc, char * txbuf)
 {
     int len = strlen(txbuf);
@@ -974,10 +1020,10 @@ send_pkt_message(int socket_desc, char * txbuf)
     char wbuffer[128];
     wbuffer[0] = 0x0d; wbuffer[1] = 0xFF;
     while(len>64) {
-        if (extn_longermessages) wbuffer[1] = 1;
-        memcpy(wbuffer+2, txbuf, 64);
+	if (extn_longermessages) wbuffer[1] = 1;
+	memcpy(wbuffer+2, txbuf, 64);
 	write(socket_desc, wbuffer, 2+64);
-        txbuf+=64; len-=64;
+	txbuf+=64; len-=64;
     }
     if (extn_longermessages) wbuffer[1] = 0;
     pad_nbstring(wbuffer+2, txbuf);
