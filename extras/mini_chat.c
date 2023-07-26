@@ -66,8 +66,8 @@ uint8_t * map_blocks = 0;
 uint16_t cells_x, cells_y, cells_z;
 int cells_xyz = 0, map_len = 0;
 xyzhv_t posn, spawn, last_sent_posn;
-int dx = 0, dz = 0;
-int posn_st = 1, posn_slower = 0, posn_slower2 = 0;
+int jmp_dx = 0, jmp_dz = 0;
+int posn_st = 0, posn_slower = 0;
 user_list_t users[MAXUSERS];
 int nearest_user = -1;
 int64_t nearest_range = 0;
@@ -79,6 +79,7 @@ int extensions_offered = 0;
 int extensions_received = 0;
 int sent_customblks = 0;
 int extn_customblocks = 0;
+int extn_longermessages = 0;
 
 int init_connection(int argc , char *argv[]);
 int process_connection();
@@ -91,6 +92,11 @@ void decompress_block(uint8_t * buf, int len);
 void decompress_end();
 void z_error(int ret);
 void move_player(int);
+void send_pkt_ident(int socket_desc, char * userid, char * mppass);
+void send_pkt_move(int socket_desc, xyzhv_t posn);
+void send_pkt_setblock(int socket_desc, int x, int y, int z, int block);
+void send_pkt_extinfo(int socket_desc);
+void send_pkt_message(int socket_desc, char * txbuf);
 
 #ifndef NO_TICKER
 struct timeval last_tick;
@@ -155,14 +161,7 @@ int init_connection(int argc , char *argv[]) {
 	exit(1);
     }
 
-    uint8_t wbuffer[256];
-
-    wbuffer[0] = 0; wbuffer[1] = 7;
-    pad_nbstring(wbuffer+2, userid);
-    pad_nbstring(wbuffer+2+64, mppass);
-    wbuffer[2+64+64] = disable_cpe?0:0x42;
-
-    write(socket_desc, wbuffer, 2+64+64+1);
+    send_pkt_ident(socket_desc, userid, mppass);
 
     return socket_desc;
 }
@@ -208,26 +207,12 @@ process_connection(int socket_desc)
 	if( FD_ISSET(tty_ifd, &rfds) )
 	{
 	    char txbuf[2048];
-	    char txwbuf[2048];
-	    int i, j;
 	    rv = read(tty_ifd, txbuf, sizeof(txbuf));
 	    if (rv <= 0) break;
 	    if (rv > 0) {
 		if (txbuf[rv-1] == '\n') rv--;
 		txbuf[rv] = 0;
-		wbuffer[0] = 0x0d; wbuffer[1] = 0xFF;
-#if defined(__STDC__) && defined(__STDC_ISO_10646__)
-		for(i=j=0; txbuf[i]; i++) {
-		    int ch = to_cp437((uint8_t)txbuf[i]);
-		    if (ch)
-			txwbuf[j++] = ch;
-		}
-		txwbuf[j] = 0;
-		pad_nbstring(wbuffer+2, txwbuf);
-#else
-		pad_nbstring(wbuffer+2, txbuf);
-#endif
-		write(socket_desc, wbuffer, 2+64);
+		send_pkt_message(socket_desc, txbuf);
 	    }
 	}
 
@@ -291,22 +276,28 @@ ticker(int socket_desc)
     near_poll = (near_poll+1)%100;
     if (near_poll == 0) move_player(255);
 
-    posn_slower = (posn_slower+1)%8;
-    if (!posn_slower) {
+    posn_slower = (posn_slower+1)%256;
+    if ((posn_slower & 7) == 0) {
 
 	if (map_blocks && cells_xyz != 0) {
 	    int x = posn.x/32, y = (posn.y-6)/32, z = posn.z/32;
+	    int xoff = posn.x - (x*32+16);
+	    int zoff = posn.z - (z*32+16);
+
 	    int off, b[3] = {0,0,0};
-	    int jumped = (!!dz + !!dx);
+	    int jumped = (!!jmp_dz + !!jmp_dx);
+
+	    // Slowly move toward distant users.
 	    if (!jumped && nearest_user >= 0 && nearest_range > (12*32)*(12*32)) {
-		posn_slower2 = (posn_slower2+1)%16;
-		if (posn_slower2 == 0) {
-		    dx = nearest_pl_dx; dz = nearest_pl_dz;
-		    jumped = (!!dz + !!dx);
-		}
+		xoff += nearest_pl_dx; zoff += nearest_pl_dz;
 	    }
 
-	    x += dx; z += dz; dx=dz=0;
+	    if (jumped) {
+		// We're jumping to "about" the centre of the block.
+		xoff = ((rand()>>8)%15 - 7);
+		zoff = ((rand()>>8)%15 - 7);
+		x += jmp_dx; z += jmp_dz; jmp_dx=jmp_dz=0;
+	    }
 
 	    if (x < 0 || x >= cells_x || z < 0 || z >= cells_x) {
 		if (spawn.valid) {
@@ -333,13 +324,14 @@ ticker(int socket_desc)
 
 	    int mov = 1;
 	    if (b[1] || b[2]) y++; else if (!b[0]) y--; else mov = 0;
-	    posn.x = x * 32 + 16;
+	    posn.x = x * 32 + 16 + xoff;
 	    posn.y = y * 32 + 22 - 16*(mov == 0 && b[0] == 2) - 3*(mov == 0 && b[0] == 3);
-	    posn.z = z * 32 + 16;
+	    posn.z = z * 32 + 16 + zoff;
 	    posn.v = 0;
 	    if (jumped || mov) move_player(255);
 	}
 
+	if (!posn_st) posn_st = (random()&2)-1;
 	posn.h+=posn_st;
 	if (!posn.h) posn_st = -posn_st;
     }
@@ -347,9 +339,11 @@ ticker(int socket_desc)
     if (nearest_user >= 0 && nearest_range < (5*32)*(5*32)) {
 	posn.v = nearest_pl_v;
 	posn.h = nearest_pl_h;
+	posn_st = 0;
     }
 
-    if (last_sent_posn.valid &&
+    if (posn_slower != 0 &&
+	last_sent_posn.valid &&
 	last_sent_posn.x == posn.x &&
 	last_sent_posn.y == posn.y &&
 	last_sent_posn.z == posn.z &&
@@ -360,26 +354,14 @@ ticker(int socket_desc)
     last_sent_posn = posn;
     last_sent_posn.valid = 1;
 
-    uint8_t wbuffer[256];
-    wbuffer[0] = 8;
-    wbuffer[1] = 255;
-    wbuffer[2] = posn.x>>8;
-    wbuffer[3] = posn.x;
-    wbuffer[4] = (posn.y+29)>>8;
-    wbuffer[5] = (posn.y+29);
-    wbuffer[6] = posn.z>>8;
-    wbuffer[7] = posn.z;
-    wbuffer[8] = posn.h;
-    wbuffer[9] = posn.v;
-    write(socket_desc, wbuffer, 10);
+    send_pkt_move(socket_desc, posn);
 }
 #endif
+
 
 void
 process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 {
-    uint8_t wbuffer[256];
-
     int uid,x,y,z,h,v,b;
     switch (packet_id) {
     case 0x00:
@@ -467,8 +449,8 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	h = pkt[8];
 	v = pkt[9];
 	if (uid == 255) {
-	    printf("TP User %d @(%.2f,%.2f,%.2f,%d,%d)\n",
-		    pkt[1], x/32.0,(y-29)/32.0,z/32.0,h*360/256,v*360/256);
+	    printf("You've been teleported to (%.2f,%.2f,%.2f,%d,%d)\n",
+		    x/32.0,(y-29)/32.0,z/32.0,h*360/256,v*360/256);
 
 	    posn.x = x;
 	    posn.y = y-7;
@@ -544,47 +526,15 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	unpad_nbstring(pkt+1);
 	if (strncmp("CustomBlocks", (char*)pkt+1, 64) == 0)
 	    extn_customblocks=1;
+	if (strncmp("LongerMessages", (char*)pkt+1, 64) == 0)
+	    extn_longermessages=1;
 	extensions_received++;
-	if (extensions_received == extensions_offered) {
-	    wbuffer[0] = 0x10;
-	    pad_nbstring(wbuffer+1, "minichat");
-	    wbuffer[65] = 0;
-	    wbuffer[66] = extn_customblocks+3;
-	    write(socket_desc, wbuffer, 67);
-	    if (extn_customblocks) {
-		wbuffer[0] = 0x11;
-		pad_nbstring(wbuffer+1, "CustomBlocks");
-		wbuffer[65] = 0;
-		wbuffer[66] = 0;
-		wbuffer[67] = 0;
-		wbuffer[68] = 1;
-		write(socket_desc, wbuffer, 69);
-	    }
-	    wbuffer[0] = 0x11;
-	    pad_nbstring(wbuffer+1, "FullCP437");
-	    wbuffer[65] = 0;
-	    wbuffer[66] = 0;
-	    wbuffer[67] = 0;
-	    wbuffer[68] = 1;
-	    write(socket_desc, wbuffer, 69);
-	    wbuffer[0] = 0x11;
-	    pad_nbstring(wbuffer+1, "EmoteFix");
-	    wbuffer[65] = 0;
-	    wbuffer[66] = 0;
-	    wbuffer[67] = 0;
-	    wbuffer[68] = 1;
-	    write(socket_desc, wbuffer, 69);
-	    wbuffer[0] = 0x11;
-	    pad_nbstring(wbuffer+1, "InstantMOTD");
-	    wbuffer[65] = 0;
-	    wbuffer[66] = 0;
-	    wbuffer[67] = 0;
-	    wbuffer[68] = 1;
-	    write(socket_desc, wbuffer, 69);
-	}
+	if (extensions_received == extensions_offered)
+	    send_pkt_extinfo(socket_desc);
 	break;
     case 0x13:
 	if (!sent_customblks) {
+	    uint8_t wbuffer[16];
 	    wbuffer[0] = 0x13; wbuffer[1] = 1;
 	    write(socket_desc, wbuffer, 2);
 	    sent_customblks = 1;
@@ -631,10 +581,6 @@ move_player(int uid)
     int h = users[uid].posn.h;
     int v = users[uid].posn.v;
 
-#if 0
-    printf("MV User %d @(%.2f,%.2f,%.2f,%d,%d)\n",
-		    uid, x/32.0,(y-22)/32.0,z/32.0,h*360/256,v*360/256);
-#endif
     if (!posn.valid) {
 	nearest_user = -1;
 	return;
@@ -666,17 +612,17 @@ move_player(int uid)
     if (posn.z != z && abs(posn.z-z) < abs(posn.x-x)*4 &&
 	posn.x != x && abs(posn.x-x) < abs(posn.z-z)*4)
     {
-	if (random()&6) { dx = posn.x-x; dx = (dx > 0) - (dx < 0); }
-	if (random()&6) { dz = posn.z-z; dz = (dz > 0) - (dz < 0); }
+	if (random()&6) { jmp_dx = posn.x-x; jmp_dx = (jmp_dx > 0) - (jmp_dx < 0); }
+	if (random()&6) { jmp_dz = posn.z-z; jmp_dz = (jmp_dz > 0) - (jmp_dz < 0); }
     } else if (abs(posn.x-x) > abs(posn.z-z) && posn.x != x) {
-	dx = posn.x-x; dx = (dx > 0) - (dx < 0);
-	if ((random()&7) == 0) dz = (random()&2)-1;
+	jmp_dx = posn.x-x; jmp_dx = (jmp_dx > 0) - (jmp_dx < 0);
+	if ((random()&7) == 0) jmp_dz = (random()&2)-1;
     } else if (posn.z != z) {
-	dz = posn.z-z; dz = (dz > 0) - (dz < 0);
-	if ((random()&7) == 0) dx = (random()&2)-1;
+	jmp_dz = posn.z-z; jmp_dz = (jmp_dz > 0) - (jmp_dz < 0);
+	if ((random()&7) == 0) jmp_dx = (random()&2)-1;
     } else {
-	dz = (random()&2)-1;
-	dx = (random()&2)-1;
+	jmp_dz = (random()&2)-1;
+	jmp_dx = (random()&2)-1;
     }
 }
 
@@ -919,3 +865,121 @@ z_error(int ret)
 	printf("Decompression Error Z_BUF_ERROR\n");
 }
 #endif
+
+void
+send_pkt_ident(int socket_desc, char * userid, char * mppass)
+{
+    uint8_t wbuffer[256];
+    wbuffer[0] = 0; wbuffer[1] = 7;
+    pad_nbstring(wbuffer+2, userid);
+    pad_nbstring(wbuffer+2+64, mppass);
+    wbuffer[2+64+64] = disable_cpe?0:0x42;
+    write(socket_desc, wbuffer, 2+64+64+1);
+}
+
+void
+send_pkt_move(int socket_desc, xyzhv_t posn)
+{
+    uint8_t wbuffer[256];
+    wbuffer[0] = 8;
+    wbuffer[1] = 255;
+    wbuffer[2] = posn.x>>8;
+    wbuffer[3] = posn.x;
+    wbuffer[4] = (posn.y+29)>>8;
+    wbuffer[5] = (posn.y+29);
+    wbuffer[6] = posn.z>>8;
+    wbuffer[7] = posn.z;
+    wbuffer[8] = posn.h;
+    wbuffer[9] = posn.v;
+    write(socket_desc, wbuffer, 10);
+}
+
+void
+send_pkt_setblock(int socket_desc, int x, int y, int z, int block)
+{
+    int moved = 0;
+    int dx = x-posn.x/32, dy = y-posn.y/32, dz = z-posn.z/32;
+    if (posn.valid && dx*dx+dy*dy+dz*dz > 25) {
+	xyzhv_t npos = posn;
+	npos.x = x*32+16;
+	npos.y = y*32+64;
+	npos.z = z*32+16;
+	send_pkt_move(socket_desc, npos);
+	moved = 1;
+    }
+    uint8_t wbuffer[256];
+    wbuffer[0] = 5;
+    wbuffer[1] = (x>>8);
+    wbuffer[2] = (x&0xFF);
+    wbuffer[3] = (y>>8);
+    wbuffer[4] = (y&0xFF);
+    wbuffer[5] = (z>>8);
+    wbuffer[6] = (z&0xFF);
+    wbuffer[7] = (block!=0);
+    wbuffer[8] = block?block:1;
+    write(socket_desc, wbuffer, 9);
+    if (moved)
+	send_pkt_move(socket_desc, posn);
+}
+
+void
+send_pkt_extinfo(int socket_desc)
+{
+static struct tx_extn { char extname[65]; uint8_t vsn; } extns[] = 
+    {
+	{ "CustomBlocks", 1 },
+	{ "FullCP437", 1 },
+	{ "EmoteFix", 1 },
+	{ "InstantMOTD", 1 },
+	{ "LongerMessages", 1 }
+    };
+
+    uint8_t wbuf[100 + 69*sizeof(extns)/sizeof(*extns)];
+    uint8_t * wbuffer = wbuf;
+
+    wbuffer[0] = 0x10;
+    pad_nbstring(wbuffer+1, "minichat");
+    wbuffer[65] = 0;
+    wbuffer[66] = sizeof(extns)/sizeof(*extns);
+    wbuffer += 67;
+
+    for(int i = 0; i< sizeof(extns)/sizeof(*extns); i++) {
+
+	wbuffer[0] = 0x11;
+	pad_nbstring(wbuffer+1, extns[i].extname);
+	wbuffer[65] = 0;
+	wbuffer[66] = 0;
+	wbuffer[67] = 0;
+	wbuffer[68] = extns[i].vsn;
+	wbuffer += 69;
+    }
+    write(socket_desc, wbuf, wbuffer-wbuf);
+}
+
+void
+send_pkt_message(int socket_desc, char * txbuf)
+{
+    int len = strlen(txbuf);
+    char txwbuf[len+2];
+#if defined(__STDC__) && defined(__STDC_ISO_10646__)
+    int i, j;
+    for(i=j=0; txbuf[i]; i++) {
+	int ch = to_cp437((uint8_t)txbuf[i]);
+	if (ch)
+	    txwbuf[j++] = ch;
+    }
+    txwbuf[j] = 0;
+    txbuf = txwbuf;
+#endif
+    char wbuffer[128];
+    wbuffer[0] = 0x0d; wbuffer[1] = 0xFF;
+    while(len>64) {
+        if (extn_longermessages) wbuffer[1] = 1;
+        memcpy(wbuffer+2, txbuf, 64);
+	write(socket_desc, wbuffer, 2+64);
+        txbuf+=64; len-=64;
+    }
+    if (extn_longermessages) wbuffer[1] = 0;
+    pad_nbstring(wbuffer+2, txbuf);
+    write(socket_desc, wbuffer, 2+64);
+}
