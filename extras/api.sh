@@ -28,51 +28,68 @@ PASS="$3"
 CODE="$4"
 NICKF=$(echo "$NICK" | tr 'A-Z' 'a-z')
 
-[ "$NICK" != '' ] && {
-    mkdir -p -m 0700 "$COOKIES"
+api_login() {
+    # Old filename
+    [ -f "$COOKIES"/.cookie.$NICKF ] &&
+	mv "$COOKIES"/.cookie.$NICKF "$COOKIES"/cookie.$NICKF
 
-    JSON1=$(curl -sS \
-	--cookie "$COOKIES"/.cookie.$NICKF \
-	--cookie-jar "$COOKIES"/.cookie.$NICKF \
-	https://www.classicube.net/api/login/)
+    [ "$NICK" != '' ] && {
+	mkdir -p -m 0700 "$COOKIES"
 
-    AUTHD=$(echo "$JSON1" | jq -r .authenticated)
-    TOKEN=$(echo "$JSON1" | jq -r .token)
-    USERNAME=$(echo "$JSON1" | jq -r .username)
+	[ "$VERBOSE" = yes ] && echo>&2 -n 'API Cookie Login ... '
+	JSON1=$(curl -sS \
+	    --cookie "$COOKIES"/cookie.$NICKF \
+	    --cookie-jar "$COOKIES"/cookie.$NICKF \
+	    https://www.classicube.net/api/login/)
+	[ "$VERBOSE" = yes ] && echo>&2 'Done.'
 
-    if [ "$AUTHD" = false ]
-    then
-	if [ "$PASS" != '' ]
+	AUTHD=$(echo "$JSON1" | jq -r .authenticated)
+	TOKEN=$(echo "$JSON1" | jq -r .token)
+	USERNAME=$(echo "$JSON1" | jq -r .username)
+
+	if [ "$AUTHD" = false ]
 	then
-	    JSON2=$(
-		curl -sS https://www.classicube.net/api/login \
-		    --cookie "$COOKIES"/.cookie.$NICKF \
-		    --cookie-jar "$COOKIES"/.cookie.$NICKF \
-		    --data username="$NICK" \
-		    --data password="$PASS" \
-		    --data token="$TOKEN" \
-		    ${CODE:+ --data login_code="$CODE"} )
+	    if [ "$PASS" != '' ]
+	    then
+		[ "$VERBOSE" = yes ] && echo>&2 -n 'API Password Login ... '
+		JSON2=$(
+		    curl -sS https://www.classicube.net/api/login \
+			--cookie "$COOKIES"/cookie.$NICKF \
+			--cookie-jar "$COOKIES"/cookie.$NICKF \
+			--data username="$NICK" \
+			--data password="$PASS" \
+			--data token="$TOKEN" \
+			${CODE:+ --data login_code="$CODE"} )
 
-		echo >&2 "$JSON2"
 		AUTHD=$(echo "$JSON2" | jq -r .authenticated)
 		USERNAME=$(echo "$JSON2" | jq -r .username)
-	else JSON2="No password"
-	fi
 
-	[ "$AUTHD" = false ] && {
-	    echo >&2 "Login failed ... $JSON2"
-	    rm -f "$COOKIES"/.cookie.$NICKF ||:
-	    echo '?'
-	    exit 1
-	}
-	[ "$VERBOSE" = yes ] && {
-	    echo "$JSON2" | jq '.' >&2
-	}
-    else
-	[ "$VERBOSE" = yes ] && {
-	    echo "$JSON1" | jq '.' >&2
-	}
-    fi
+		[ "$VERBOSE" = yes ] && {
+		    if [ "$AUTHD" = false ]
+		    then echo>&2 'Failed'
+		    else echo>&2 'Done'
+		    fi
+		}
+
+	    else JSON2="No password"
+	    fi
+
+	    [ "$AUTHD" = false ] && {
+		echo >&2 "Login failed ..."
+		echo >&2 "$JSON2"
+		rm -f "$COOKIES"/cookie.$NICKF ||:
+		echo '?'
+		exit 1
+	    }
+	    [ "$VERBOSE" = yes ] && {
+		echo "$JSON2" | jq '.' >&2
+	    }
+	else
+	    [ "$VERBOSE" = yes ] && {
+		echo "$JSON1" | jq '.' >&2
+	    }
+	fi
+    }
 }
 
 TMP=/tmp/_tmp$$.txt
@@ -85,13 +102,19 @@ HASH=
     esac
 }
 
+JSON3=''
+
+api_login
+
 if [ "$HASH" != '' ]
 then echo>&2 "Using $HASH generated from $SEARCH"
 elif [ "${#SEARCH}" = 32 ]
 then HASH="$SEARCH"
      echo>&2 "Using $HASH directly"
 else
-    curl -sS ${NICK:+--cookie "$COOKIES"/.cookie."$NICKF"} https://www.classicube.net/api/servers > "$TMP"
+    [ "$VERBOSE" = yes ] && echo>&2 -n 'Fetch server list ... '
+    curl -sS ${NICK:+--cookie "$COOKIES"/cookie."$NICKF"} https://www.classicube.net/api/servers > "$TMP"
+    [ "$VERBOSE" = yes ] && echo>&2 "Got $(jq<"$TMP" '.[]|length') servers"
 
     case "$SEARCH" in
     *\$ ) SEARCH="${SEARCH%?}	"
@@ -101,7 +124,7 @@ else
 
     [ "$(echo "$NAME" | wc -l)" -ne 1 ] && {
 	echo >&2 "Found records..."
-	echo "$NAME" | expand -64 >&2
+	echo "$NAME" | sed 's/[\t ]*:null//' | expand -58 >&2
 	echo '?'
 	exit 1
     }
@@ -109,7 +132,7 @@ else
     NAME=$(echo "$NAME" | awk -F'\t' 'NR==1{print $1;}')
 
     if [ "$VERBOSE" = yes ]||[ "$NICK" = '' ]
-    then echo >&2 "Found record: \"$NAME\""
+    then [ "$NAME" != '' ] && echo >&2 "Found record: \"$NAME\""
     fi
 
     [ "$NICK" = '' ] && {
@@ -132,16 +155,25 @@ else
 
     [ "$HASH" = '' ] &&
 	HASH=$( jq < "$TMP" -r '.servers[] | select(.name=="'"$NAME"'").hash')
+    [ "$HASH" != '' ] &&
+	JSON3="$(jq < "$TMP" '.servers[] | select(.hash=="'"$HASH"'" and has("mppass"))' )"
 fi
 
 fetch_j3() {
-    JSON3=$(curl -sS ${NICK:+--cookie "$COOKIES"/.cookie."$NICKF"} \
+    [ "$VERBOSE" = yes ] && echo>&2 Fetch server record
+    JSON3=$(curl -sS ${NICK:+--cookie "$COOKIES"/cookie."$NICKF"} \
 		"https://www.classicube.net/api/server/$HASH")
 }
 
-fetch_j3
 case "$JSON3" in
-*429* ) sleep 2 ; fetch_j3 ;;
+""|null ) fetch_j3 ;;
+* ) JSON3='{"servers":['"$JSON3"']}' ;;
+esac
+
+case "$(echo "$JSON3" | jq -r '.servers[0].mppass' 2>/dev/null)" in
+"" )
+    [ "$VERBOSE" = yes ] && echo>&2 "Error $JSON3"
+    sleep 2 ; fetch_j3 ;;
 esac
 
 [ "$VERBOSE" = yes ] && {
