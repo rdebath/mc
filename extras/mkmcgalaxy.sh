@@ -237,6 +237,20 @@ build_std() {
 	git worktree remove /tmp/_wt."$CHECKOUT"/MCGalaxy 2>/dev/null ||:
 	rmdir /tmp/_wt."$CHECKOUT" ||:
 
+    elif [ "$SSH_HOST" != '' ]
+    then
+	build "$0" > /tmp/Dockerfile
+	scp -p /tmp/Dockerfile "$SSH_HOST":/tmp/Dockerfile
+	ssh -qt "$SSH_HOST" \
+	docker build -t "$IMAGE" \
+	    ${TARGET:+"--target=$TARGET"} \
+	    ${FROM:+"--build-arg=FROM=$FROM"} \
+	    $COMPFLG \
+	    $EXTRAFLAG \
+	    --build-arg=UID=$(id -u) \
+	    ${MONO_VERSION:+"--build-arg=MONO_VERSION=$MONO_VERSION"} \
+	    - \</tmp/Dockerfile
+
     else
 	build "$0" |
 	docker build -t "$IMAGE" \
