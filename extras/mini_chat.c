@@ -66,14 +66,18 @@ uint8_t * map_blocks = 0;
 uint16_t cells_x, cells_y, cells_z;
 int cells_xyz = 0, map_len = 0;
 xyzhv_t posn, spawn, last_sent_posn;
-int jmp_dx = 0, jmp_dz = 0;
-int posn_st = 0, posn_slower = 0;
 user_list_t users[MAXUSERS];
 char my_user_name[65];
+int active_user_count;
+
+#ifndef NO_TICKER
+int jmp_dx = 0, jmp_dz = 0;
+int posn_st = 0, posn_slower = 0;
 int nearest_user = -1, nearest_is_user = 0;
 int64_t nearest_range = 0, nearest_crange;
 #define sq_range(R) (((R)*32)*((R)*32))
 int nearest_pl_v = 0, nearest_pl_h = 0, nearest_pl_dx = 0, nearest_pl_dz = 0;
+#endif
 
 int disable_cpe = 0;
 int extensions_offered = 0;
@@ -93,17 +97,21 @@ void decompress_start();
 void decompress_block(uint8_t * buf, int len);
 void decompress_end();
 void z_error(int ret);
-void move_player(int);
-int is_clone(char * my_name, char * their_name);
 void send_pkt_ident(int socket_desc, char * userid, char * mppass);
 void send_pkt_move(int socket_desc, xyzhv_t posn);
 void send_pkt_setblock(int socket_desc, int x, int y, int z, int block);
 void send_pkt_extinfo(int socket_desc);
 void send_pkt_message(int socket_desc, char * txbuf);
 
+#ifdef NO_TICKER
+#define move_player(uid)
+#endif
+
 #ifndef NO_TICKER
 struct timeval last_tick;
 void ticker(int socket_desc);
+void move_player(int);
+int is_clone(char * my_name, char * their_name);
 #endif
 
 char last_motd[64];
@@ -267,105 +275,6 @@ process_connection(int socket_desc)
     return (rv<0);
 }
 
-#ifndef NO_TICKER
-void
-ticker(int socket_desc)
-{
-    struct timeval tv;
-    gettimeofday(&tv, 0);
-    int csec = ((tv.tv_sec*1000000+tv.tv_usec) - (last_tick.tv_sec*1000000+last_tick.tv_usec))/10000;
-    if (csec == 0) return;
-    last_tick = tv;
-
-    if (!posn.valid) return;
-    posn_slower = (posn_slower+1)%200;
-
-    if (posn_slower == 50 || posn_slower == 150) move_player(255);
-
-    if (posn_slower%5  == 0) {
-
-	if (map_blocks && cells_xyz != 0) {
-	    int x = posn.x/32, y = (posn.y-6)/32, z = posn.z/32;
-	    int xoff = posn.x - (x*32+16);
-	    int zoff = posn.z - (z*32+16);
-
-	    int off, b[3] = {0,0,0};
-	    int jumped = (!!jmp_dz + !!jmp_dx);
-
-	    // Move toward distant users.
-	    if (!jumped && nearest_user >= 0 && nearest_range > sq_range(12)) {
-		xoff += nearest_pl_dx; zoff += nearest_pl_dz;
-	    }
-
-	    if (jumped) {
-		// We're jumping to "about" the centre of the block.
-		xoff = ((rand()>>8)%15 - 7);
-		zoff = ((rand()>>8)%15 - 7);
-		x += jmp_dx; z += jmp_dz; jmp_dx=jmp_dz=0;
-	    }
-
-	    if (x < 0 || x >= cells_x || z < 0 || z >= cells_x) {
-		if (spawn.valid) {
-		    x = spawn.x/32; y = spawn.y/32; z = spawn.z/32;
-		    jumped = 1;
-		}
-	    }
-	    if (x < 0 || x >= cells_x || z < 0 || z >= cells_x) {
-		x = cells_x/2; y = cells_y; z = cells_z/2;
-		jumped = 1;
-	    }
-
-	    for(off=-1; off<2; off++) {
-		int y1 = y+off;
-		int b1 = 0;
-		if (y1 < 0) b1 = 7; else if (y1 >= cells_y) b1 = 0;
-		else b1 = map_blocks[World_Pack(x, y1, z)];
-		if (b1 == 44 || b1 == 50) b1 = 2;
-		else if (b1 == 8 || b1 == 9 || b1 == 10 || b1 == 11) b1 = 3;
-		else b1 = ! (b1 == 0 || b1 == 6 || b1 == 37 || b1 == 38 ||
-		    b1 == 39 || b1 == 40 || b1 == 51 || b1 == 53 || b1 == 54);
-		b[off+1] = b1;
-	    }
-
-	    int mov = 1;
-	    if (b[1] || b[2]) y++; else if (!b[0]) y--; else mov = 0;
-	    posn.x = x * 32 + 16 + xoff;
-	    posn.y = y * 32 + 22 - 16*(mov == 0 && b[0] == 2) - 3*(mov == 0 && b[0] == 3);
-	    posn.z = z * 32 + 16 + zoff;
-	    posn.v = 0;
-	    if (jumped || mov) move_player(255);
-	}
-
-	if (nearest_is_user) {
-	    if (!posn_st) posn_st = (random()&2)-1;
-	    posn.h+=posn_st;
-	    if (!posn.h) posn_st = -posn_st;
-	}
-    }
-
-    if (nearest_user >= 0 && nearest_range < sq_range(5) && nearest_is_user) {
-	posn.v = nearest_pl_v;
-	posn.h = nearest_pl_h;
-	posn_st = 0;
-    }
-
-    if (posn_slower != 0 &&
-	last_sent_posn.valid &&
-	last_sent_posn.x == posn.x &&
-	last_sent_posn.y == posn.y &&
-	last_sent_posn.z == posn.z &&
-	last_sent_posn.h == posn.h &&
-	last_sent_posn.v == posn.v)
-	return;
-
-    last_sent_posn = posn;
-    last_sent_posn.valid = 1;
-
-    send_pkt_move(socket_desc, posn);
-}
-#endif
-
-
 void
 process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 {
@@ -425,7 +334,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	h = pkt[72];
 	v = pkt[73];
 	if (uid == 255) y += 22;
-	{
+	if (active_user_count < 20) {
 	    char buf[256];
 	    sprintf(buf, "User %d @(%.2f,%.2f,%.2f,%d,%d)",
 		    uid, x/32.0,(y-51)/32.0,z/32.0,h*360/256,v*360/256);
@@ -442,6 +351,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	    spawn = posn;
 	    memcpy(my_user_name, pkt+2, sizeof(my_user_name));
 	} else if (uid < MAXUSERS) {
+	    if (!users[uid].posn.valid) active_user_count++;
 	    users[uid].posn.x = x;
 	    users[uid].posn.y = y-29;
 	    users[uid].posn.z = z;
@@ -519,8 +429,9 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	break;
     case 0x0c:
 	uid = pkt[1];
+	if (users[uid].posn.valid) active_user_count++;
 	if (uid < MAXUSERS) users[uid].posn.valid = 0;
-	if (nearest_user == uid) move_player(255);
+	move_player(255);
 	break;
     case 0x0d:
 	print_text(0, pkt+2);
@@ -551,113 +462,6 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	}
 	break;
     }
-}
-
-void
-calculate_stare_angle(int player_x, int player_y, int player_z, int tx, int ty, int tz, int * ph, int * pv)
-{
-    int player_eye = 56;
-    int target_eye = 56;
-
-    double dx = tx - player_x;
-    double dy = (ty+target_eye) - (player_y+player_eye);
-    double dz = tz - player_z;
-
-    double range = sqrt(dx*dx+dy*dy+dz*dz);
-    if (range != 0) {
-	double ir = 1/range;
-	dx *= ir; dy *= ir; dz *= ir;
-    }
-
-    double radian2byte = 256 / (2 * M_PI);
-
-    *ph = atan2(dx, -dz) * radian2byte;
-    *pv = asin(-dy) * radian2byte;
-}
-
-void
-move_player(int uid)
-{
-    if (uid == 255) {
-	nearest_user = -1;
-	nearest_is_user = 0;
-	for(int i=0; i<MAXUSERS; i++)
-	    if(i!=uid && users[i].posn.valid) move_player(i);
-	return;
-    }
-    if (!users[uid].posn.valid) return;
-    int x = users[uid].posn.x;
-    int y = users[uid].posn.y;
-    int z = users[uid].posn.z;
-    int h = users[uid].posn.h;
-    int v = users[uid].posn.v;
-
-    if (!posn.valid) {
-	nearest_user = -1;
-	return;
-    }
-
-    int64_t range, crange;
-    int isclone = 0;
-    {
-	int64_t rx = abs(x - posn.x);
-	int64_t ry = abs(y - posn.y);
-	int64_t rz = abs(z - posn.z);
-	crange = range = rx*rx + ry*ry + rz*rz;
-	isclone = is_clone(my_user_name, users[uid].name);
-	if (isclone) crange *= 1048576;
-    }
-    if (nearest_user < 0 || crange < nearest_crange || nearest_user == uid) {
-	nearest_user = uid;
-	nearest_range = range;
-	nearest_crange = crange;
-	nearest_is_user = !isclone;
-    }
-    if (uid == nearest_user) {
-	calculate_stare_angle(posn.x, posn.y, posn.z, x, y, z, &nearest_pl_h, &nearest_pl_v);
-	nearest_pl_dx = (posn.x < x) - (x < posn.x);
-	nearest_pl_dz = (posn.z < z) - (z < posn.z);
-	if (abs(posn.z-z) > abs(posn.x-x)*5) nearest_pl_dx = 0;
-	if (abs(posn.x-x) > abs(posn.z-z)*5) nearest_pl_dz = 0;
-	if (abs(posn.x-x) < 32) nearest_pl_dx = 0;
-	if (abs(posn.z-z) < 32) nearest_pl_dz = 0;
-    }
-
-    // Is there someone close?
-    if (abs(posn.y-y) > 96 || abs(posn.x-x) > 46 || abs(posn.z-z) > 46) return;
-    if (posn.z != z && abs(posn.z-z) < abs(posn.x-x)*4 &&
-	posn.x != x && abs(posn.x-x) < abs(posn.z-z)*4)
-    {
-	if (random()&6) { jmp_dx = posn.x-x; jmp_dx = (jmp_dx > 0) - (jmp_dx < 0); }
-	if (random()&6) { jmp_dz = posn.z-z; jmp_dz = (jmp_dz > 0) - (jmp_dz < 0); }
-    } else if (abs(posn.x-x) > abs(posn.z-z) && posn.x != x) {
-	jmp_dx = posn.x-x; jmp_dx = (jmp_dx > 0) - (jmp_dx < 0);
-	if ((random()&7) == 0) jmp_dz = (random()&2)-1;
-    } else if (posn.z != z) {
-	jmp_dz = posn.z-z; jmp_dz = (jmp_dz > 0) - (jmp_dz < 0);
-	if ((random()&7) == 0) jmp_dx = (random()&2)-1;
-    } else {
-	jmp_dz = (random()&2)-1;
-	jmp_dx = (random()&2)-1;
-    }
-}
-
-int
-is_clone(char * my_name, char * their_name)
-{
-    // Are the two usernames "similar" ?
-    char *m, *t;
-    for(m=my_name, t=their_name; *t && *m; )
-    {
-	if (*m == '&' && m[1] != 0) {m+=2; continue;}
-	if (*t == '&' && t[1] != 0) {t+=2; continue;}
-	if (*t >= '0' && *t <= '9' && *m >= '0' && *m <= '9')
-	    return 1;
-	if (*t != *m)
-	    return 0;
-	m++; t++;
-    }
-    return 1;
 }
 
 void
@@ -1033,3 +837,208 @@ send_pkt_message(int socket_desc, char * txbuf)
     pad_nbstring(wbuffer+2, txbuf);
     write(socket_desc, wbuffer, 2+64);
 }
+
+#ifndef NO_TICKER
+void
+ticker(int socket_desc)
+{
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    int csec = ((tv.tv_sec*1000000+tv.tv_usec) - (last_tick.tv_sec*1000000+last_tick.tv_usec))/10000;
+    if (csec == 0) return;
+    last_tick = tv;
+
+    if (!posn.valid) return;
+    posn_slower = (posn_slower+1)%200;
+
+    if (posn_slower == 50 || posn_slower == 150) move_player(255);
+
+    if (posn_slower%5  == 0) {
+
+	if (map_blocks && cells_xyz != 0) {
+	    int x = posn.x/32, y = (posn.y-6)/32, z = posn.z/32;
+	    int xoff = posn.x - (x*32+16);
+	    int zoff = posn.z - (z*32+16);
+
+	    int off, b[3] = {0,0,0};
+	    int jumped = (!!jmp_dz + !!jmp_dx);
+
+	    // Move toward distant users.
+	    if (!jumped && nearest_user >= 0 && nearest_range > sq_range(12)) {
+		xoff += nearest_pl_dx; zoff += nearest_pl_dz;
+	    }
+
+	    if (jumped) {
+		// We're jumping to "about" the centre of the block.
+		xoff = ((rand()>>8)%15 - 7);
+		zoff = ((rand()>>8)%15 - 7);
+		x += jmp_dx; z += jmp_dz; jmp_dx=jmp_dz=0;
+	    }
+
+	    if (x < 0 || x >= cells_x || z < 0 || z >= cells_x) {
+		if (spawn.valid) {
+		    x = spawn.x/32; y = spawn.y/32; z = spawn.z/32;
+		    jumped = 1;
+		}
+	    }
+	    if (x < 0 || x >= cells_x || z < 0 || z >= cells_x) {
+		x = cells_x/2; y = cells_y; z = cells_z/2;
+		jumped = 1;
+	    }
+
+	    for(off=-1; off<2; off++) {
+		int y1 = y+off;
+		int b1 = 0;
+		if (y1 < 0) b1 = 7; else if (y1 >= cells_y) b1 = 0;
+		else b1 = map_blocks[World_Pack(x, y1, z)];
+		if (b1 == 44 || b1 == 50) b1 = 2;
+		else if (b1 == 8 || b1 == 9 || b1 == 10 || b1 == 11) b1 = 3;
+		else b1 = ! (b1 == 0 || b1 == 6 || b1 == 37 || b1 == 38 ||
+		    b1 == 39 || b1 == 40 || b1 == 51 || b1 == 53 || b1 == 54);
+		b[off+1] = b1;
+	    }
+
+	    int mov = 1;
+	    if (b[1] || b[2]) y++; else if (!b[0]) y--; else mov = 0;
+	    posn.x = x * 32 + 16 + xoff;
+	    posn.y = y * 32 + 22 - 16*(mov == 0 && b[0] == 2) - 3*(mov == 0 && b[0] == 3);
+	    posn.z = z * 32 + 16 + zoff;
+	    posn.v = 0;
+	    if (jumped || mov) move_player(255);
+	}
+
+	if (active_user_count > 19 || nearest_is_user) {
+	    if (!posn_st) posn_st = (random()&2)-1;
+	    posn.h+=posn_st;
+	    if (!posn.h) posn_st = -posn_st;
+	}
+    }
+
+    if (nearest_user >= 0 && nearest_range < sq_range(5) && nearest_is_user) {
+	posn.v = nearest_pl_v;
+	posn.h = nearest_pl_h;
+	posn_st = 0;
+    }
+
+    if (posn_slower != 0 &&
+	last_sent_posn.valid &&
+	last_sent_posn.x == posn.x &&
+	last_sent_posn.y == posn.y &&
+	last_sent_posn.z == posn.z &&
+	last_sent_posn.h == posn.h &&
+	last_sent_posn.v == posn.v)
+	return;
+
+    last_sent_posn = posn;
+    last_sent_posn.valid = 1;
+
+    send_pkt_move(socket_desc, posn);
+}
+
+void
+calculate_stare_angle(int player_x, int player_y, int player_z, int tx, int ty, int tz, int * ph, int * pv)
+{
+    int player_eye = 56;
+    int target_eye = 56;
+
+    double dx = tx - player_x;
+    double dy = (ty+target_eye) - (player_y+player_eye);
+    double dz = tz - player_z;
+
+    double range = sqrt(dx*dx+dy*dy+dz*dz);
+    if (range != 0) {
+	double ir = 1/range;
+	dx *= ir; dy *= ir; dz *= ir;
+    }
+
+    double radian2byte = 256 / (2 * M_PI);
+
+    *ph = atan2(dx, -dz) * radian2byte;
+    *pv = asin(-dy) * radian2byte;
+}
+
+void
+move_player(int uid)
+{
+    if (uid == 255) {
+	nearest_user = -1;
+	nearest_is_user = 0;
+	for(int i=0; i<MAXUSERS; i++)
+	    if(i!=uid && users[i].posn.valid) move_player(i);
+	return;
+    }
+    if (!users[uid].posn.valid) return;
+    int x = users[uid].posn.x;
+    int y = users[uid].posn.y;
+    int z = users[uid].posn.z;
+    int h = users[uid].posn.h;
+    int v = users[uid].posn.v;
+
+    if (!posn.valid) {
+	nearest_user = -1;
+	return;
+    }
+
+    int64_t range, crange;
+    int isclone = 0;
+    {
+	int64_t rx = abs(x - posn.x);
+	int64_t ry = abs(y - posn.y);
+	int64_t rz = abs(z - posn.z);
+	crange = range = rx*rx + ry*ry + rz*rz;
+	isclone = is_clone(my_user_name, users[uid].name);
+	if (isclone) crange *= 1048576;
+    }
+    if (nearest_user < 0 || crange < nearest_crange || nearest_user == uid) {
+	nearest_user = uid;
+	nearest_range = range;
+	nearest_crange = crange;
+	nearest_is_user = !isclone;
+    }
+    if (uid == nearest_user) {
+	calculate_stare_angle(posn.x, posn.y, posn.z, x, y, z, &nearest_pl_h, &nearest_pl_v);
+	nearest_pl_dx = (posn.x < x) - (x < posn.x);
+	nearest_pl_dz = (posn.z < z) - (z < posn.z);
+	if (abs(posn.z-z) > abs(posn.x-x)*5) nearest_pl_dx = 0;
+	if (abs(posn.x-x) > abs(posn.z-z)*5) nearest_pl_dz = 0;
+	if (abs(posn.x-x) < 32) nearest_pl_dx = 0;
+	if (abs(posn.z-z) < 32) nearest_pl_dz = 0;
+    }
+
+    // Is there someone close?
+    if (abs(posn.y-y) > 96 || abs(posn.x-x) > 46 || abs(posn.z-z) > 46) return;
+    if (posn.z != z && abs(posn.z-z) < abs(posn.x-x)*4 &&
+	posn.x != x && abs(posn.x-x) < abs(posn.z-z)*4)
+    {
+	if (random()&6) { jmp_dx = posn.x-x; jmp_dx = (jmp_dx > 0) - (jmp_dx < 0); }
+	if (random()&6) { jmp_dz = posn.z-z; jmp_dz = (jmp_dz > 0) - (jmp_dz < 0); }
+    } else if (abs(posn.x-x) > abs(posn.z-z) && posn.x != x) {
+	jmp_dx = posn.x-x; jmp_dx = (jmp_dx > 0) - (jmp_dx < 0);
+	if ((random()&7) == 0) jmp_dz = (random()&2)-1;
+    } else if (posn.z != z) {
+	jmp_dz = posn.z-z; jmp_dz = (jmp_dz > 0) - (jmp_dz < 0);
+	if ((random()&7) == 0) jmp_dx = (random()&2)-1;
+    } else {
+	jmp_dz = (random()&2)-1;
+	jmp_dx = (random()&2)-1;
+    }
+}
+
+int
+is_clone(char * my_name, char * their_name)
+{
+    // Are the two usernames "similar" ?
+    char *m, *t;
+    for(m=my_name, t=their_name; *t && *m; )
+    {
+	if (*m == '&' && m[1] != 0) {m+=2; continue;}
+	if (*t == '&' && t[1] != 0) {t+=2; continue;}
+	if (*t >= '0' && *t <= '9' && *m >= '0' && *m <= '9')
+	    return 1;
+	if (*t != *m)
+	    return 0;
+	m++; t++;
+    }
+    return 1;
+}
+#endif
