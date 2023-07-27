@@ -70,11 +70,10 @@ int jmp_dx = 0, jmp_dz = 0;
 int posn_st = 0, posn_slower = 0;
 user_list_t users[MAXUSERS];
 char my_user_name[65];
-int nearest_user = -1, nearest_is_clone = 0;
+int nearest_user = -1, nearest_is_user = 0;
 int64_t nearest_range = 0, nearest_crange;
 #define sq_range(R) (((R)*32)*((R)*32))
 int nearest_pl_v = 0, nearest_pl_h = 0, nearest_pl_dx = 0, nearest_pl_dz = 0;
-int near_poll = 0;
 
 int disable_cpe = 0;
 int extensions_offered = 0;
@@ -259,10 +258,7 @@ process_connection(int socket_desc)
 	}
 
 #ifndef NO_TICKER
-	gettimeofday(&tv, 0);
-	int csec = ((tv.tv_sec*1000000+tv.tv_usec) - (last_tick.tv_sec*1000000+last_tick.tv_usec))/10000;
-	if (csec)
-	    ticker(socket_desc);
+	ticker(socket_desc);
 #endif
     }
 
@@ -275,13 +271,18 @@ process_connection(int socket_desc)
 void
 ticker(int socket_desc)
 {
-    gettimeofday(&last_tick, 0);
-    if (!posn.valid) return;
-    near_poll = (near_poll+1)%100;
-    if (near_poll == 0) move_player(255);
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    int csec = ((tv.tv_sec*1000000+tv.tv_usec) - (last_tick.tv_sec*1000000+last_tick.tv_usec))/10000;
+    if (csec == 0) return;
+    last_tick = tv;
 
-    posn_slower = (posn_slower+1)%256;
-    if ((posn_slower & 7) == 0) {
+    if (!posn.valid) return;
+    posn_slower = (posn_slower+1)%200;
+
+    if (posn_slower == 50 || posn_slower == 150) move_player(255);
+
+    if (posn_slower%5  == 0) {
 
 	if (map_blocks && cells_xyz != 0) {
 	    int x = posn.x/32, y = (posn.y-6)/32, z = posn.z/32;
@@ -291,7 +292,7 @@ ticker(int socket_desc)
 	    int off, b[3] = {0,0,0};
 	    int jumped = (!!jmp_dz + !!jmp_dx);
 
-	    // Slowly move toward distant users.
+	    // Move toward distant users.
 	    if (!jumped && nearest_user >= 0 && nearest_range > sq_range(12)) {
 		xoff += nearest_pl_dx; zoff += nearest_pl_dz;
 	    }
@@ -335,12 +336,14 @@ ticker(int socket_desc)
 	    if (jumped || mov) move_player(255);
 	}
 
-	if (!posn_st) posn_st = (random()&2)-1;
-	posn.h+=posn_st;
-	if (!posn.h) posn_st = -posn_st;
+	if (nearest_is_user) {
+	    if (!posn_st) posn_st = (random()&2)-1;
+	    posn.h+=posn_st;
+	    if (!posn.h) posn_st = -posn_st;
+	}
     }
 
-    if (nearest_user >= 0 && nearest_range < sq_range(5) && !nearest_is_clone) {
+    if (nearest_user >= 0 && nearest_range < sq_range(5) && nearest_is_user) {
 	posn.v = nearest_pl_v;
 	posn.h = nearest_pl_h;
 	posn_st = 0;
@@ -577,6 +580,7 @@ move_player(int uid)
 {
     if (uid == 255) {
 	nearest_user = -1;
+	nearest_is_user = 0;
 	for(int i=0; i<MAXUSERS; i++)
 	    if(i!=uid && users[i].posn.valid) move_player(i);
 	return;
@@ -607,7 +611,7 @@ move_player(int uid)
 	nearest_user = uid;
 	nearest_range = range;
 	nearest_crange = crange;
-	nearest_is_clone = isclone;
+	nearest_is_user = !isclone;
     }
     if (uid == nearest_user) {
 	calculate_stare_angle(posn.x, posn.y, posn.z, x, y, z, &nearest_pl_h, &nearest_pl_v);
