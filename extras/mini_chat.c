@@ -222,8 +222,10 @@ process_connection(int socket_desc)
 	    if (rv <= 0) break;
 	    if (rv > 0) {
 		if (txbuf[rv-1] == '\n') rv--;
-		txbuf[rv] = 0;
-		process_user_message(socket_desc, txbuf);
+		if (rv > 0) {
+		    txbuf[rv] = 0;
+		    process_user_message(socket_desc, txbuf);
+		}
 	    }
 	}
 
