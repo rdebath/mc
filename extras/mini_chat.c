@@ -431,8 +431,10 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 	break;
     case 0x0c:
 	uid = pkt[1];
-	if (users[uid].posn.valid) active_user_count++;
-	if (uid < MAXUSERS) users[uid].posn.valid = 0;
+	if (uid < MAXUSERS) {
+	    if (users[uid].posn.valid) active_user_count++;
+	    users[uid].posn.valid = 0;
+	}
 	move_player(255);
 	break;
     case 0x0d:
