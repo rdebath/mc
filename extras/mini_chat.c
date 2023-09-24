@@ -25,29 +25,7 @@
 
 #include <zlib.h>
 
-int msgsize[256] = {
-    /* 0x00 */ 131,		/* Ident */
-    /* 0x01 */ 1,		/* Ping */
-    /* 0x02 */ 1,		/* LevelInit */
-    /* 0x03 */ 1024+4,		/* LevelData */
-    /* 0x04 */ 7,		/* LevelEnd */
-    /* 0x05 */ 0,		/* Client setblock */
-    /* 0x06 */ 8,		/* SetBlock */
-    /* 0x07 */ 2+64+6+2,	/* Spawn Entity */
-    /* 0x08 */ 2+6+2,		/* Position */
-    /* 0x09 */ 7,		/* Entity Move and Rotate */
-    /* 0x0a */ 5,		/* Entity Move */
-    /* 0x0b */ 4,		/* Entiry Rotate */
-    /* 0x0c */ 2,		/* Remove Entity */
-    /* 0x0d */ 2+64,		/* Message */
-    /* 0x0e */ 1+64,		/* Disconnect Message */
-    /* 0x0f */ 2,		/* SetOP */
-
-    /* 0x10 */ 67,		/* ExtInfo */
-    /* 0x11 */ 69,		/* ExtEntry */
-    /* 0x12 */ 3,		/* ClickDistance */
-    /* 0x13 */ 2,		/* CustBlock */
-};
+extern int msgsize[256];
 
 #if defined(__STDC__) && defined(__STDC_ISO_10646__)
 extern int cp437rom[256];
@@ -59,14 +37,25 @@ struct xyzhv_t { int x, y, z; int8_t h, v, valid; };
 typedef struct user_list_t user_list_t;
 struct user_list_t { xyzhv_t posn; char name[65]; };
 
-#define MAXUSERS 128
+// This should be 128, but MCG just sends it's ID even if it's greater.
+// So let's use the info if we get it.
+#define MAXUSERS 255
+
+#ifndef DEFAULT_MPPASS
+#define DEFAULT_MPPASS "0"
+#endif
+char * server_host = "localhost";
+int server_port = 25565;
+char * userid = "mc";
+char * mppass = DEFAULT_MPPASS;
+FILE * chat_log = 0;
 
 #define World_Pack(x, y, z) (((y) * cells_z + (z)) * cells_x + (x))
 uint8_t * map_blocks = 0;
 uint16_t cells_x, cells_y, cells_z;
 int cells_xyz = 0, map_len = 0;
 xyzhv_t posn, spawn, last_sent_posn;
-user_list_t users[MAXUSERS];
+user_list_t users[MAXUSERS+1];
 char my_user_name[65];
 int active_user_count;
 
@@ -86,11 +75,12 @@ int sent_customblks = 0;
 int extn_customblocks = 0;
 int extn_longermessages = 0;
 
-int init_connection(int argc , char *argv[]);
+void set_args(int argc , char *argv[]);
+int init_connection();
 int process_connection();
 void process_packet(int packet_id, uint8_t * pkt, int socket_desc);
 void process_user_message(int socket_desc, char * txbuf);
-void print_text(char * prefix, uint8_t * str);
+void print_text(const char * prefix, const uint8_t * str);
 void pad_nbstring(uint8_t * dest, const char * str);
 void unpad_nbstring(uint8_t * str);
 void decompress_start();
@@ -127,37 +117,92 @@ int main(int argc , char *argv[]) {
 #if defined(__STDC__) && defined(__STDC_ISO_10646__)
     setlocale(LC_ALL, "");
 #endif
-    int socket_desc = init_connection(argc, argv);
+    userid = getenv("USER");
+    set_args(argc, argv);
+    int socket_desc = init_connection();
     int rv = process_connection(socket_desc);
     return rv;
 }
 
-int init_connection(int argc , char *argv[]) {
+void
+set_args(int argc , char *argv[])
+{
+    int ac = 0;
+    char * chat_log_name = 0;
+
+    while(argc>1) {
+
+	if (argc>2 && strcmp( argv[1], "-L") == 0) {
+	    chat_log_name = argv[2];
+	    argc-=2; argv+=2;
+	} else
+
+	if (strcmp( argv[1], "-X") == 0) {
+	    disable_cpe = 1;
+	    argc--; argv++;
+	} else
+
+	switch(ac) {
+	case 0:
+	    userid = argv[1]; ac++; argc--; argv++;
+
+	    if (strncmp("mc://", userid, 5) == 0) {
+		// mc://127.0.0.1:25565/Userid/mppass
+		char * url = strdup(userid);
+		char * p1 = strchr(url+5, ':');
+		char * p2 = strchr(url+5, '/');
+		if (p1) *p1 = 0; if (p2) *p2 = 0;
+		server_host = strdup(url+5);
+		if (p1 && p2 && p2>p1)
+		    server_port = atoi(p1+1);
+		else
+		    server_port = 25565;
+		if (p1) *p1 = ':'; if (p2) *p2 = '/';
+		if (p2) {
+		    p1 = strchr(p2+1, '/');
+		    if (p1) *p1 = 0;
+		    userid = strdup(p2+1);
+		    if ((p2 = strchr(userid, '?')) != 0) *p2 = 0;
+		    if (p1)
+			mppass = strdup(p1+1);
+		}
+		free(url);
+		ac += 3;
+	    }
+	    break;
+
+	case 1: mppass = argv[1]; ac++; argc--; argv++; break;
+	case 2: server_host = argv[1]; ac++; argc--; argv++; break;
+	case 3: server_port = atoi(argv[1]); ac++; argc--; argv++; break;
+	default:
+	    fprintf(stderr, "Too many arguments with '%s'\n", argv[1]);
+	    exit(1);
+	}
+
+	if (server_port <= 0 || server_port > 65535) {
+	    fprintf(stderr, "Illegal port number\n");
+	    exit(1);
+	}
+    }
+
+    if (chat_log_name) {
+	chat_log = fopen(chat_log_name, "a");
+	if (!chat_log)
+	    perror(chat_log_name);
+	else
+	    setlinebuf(chat_log);
+    }
+}
+
+int init_connection()
+{
     int socket_desc;
     struct sockaddr_in server;
     struct hostent * hostaddr = 0;
 
-    char * host = "localhost";
-    int port = 25565;
-    char * userid = getenv("USER");
-    char * mppass = "0";
-
-    if (argc > 1) userid = argv[1];
-    if (argc > 3) mppass = argv[2];
-    if (argc > 3) host = argv[3];
-    if (argc > 4) port = atoi(argv[4]);
-#ifdef DEFAULT_MPPASS
-    if (argc < 3) mppass = DEFAULT_MPPASS;
-#endif
-
-    if (port <= 0 || port > 65535) {
-	fprintf(stderr, "Illegal port number\n");
-	exit(1);
-    }
-
-    hostaddr = gethostbyname(host);
+    hostaddr = gethostbyname(server_host);
     if(!hostaddr || hostaddr->h_addr_list[0] == 0) {
-	fprintf(stderr, "Could not resolve host '%s'\n", host);
+	fprintf(stderr, "Could not resolve host '%s'\n", server_host);
 	exit(1);
     }
 
@@ -165,7 +210,7 @@ int init_connection(int argc , char *argv[]) {
 
     memcpy(&server.sin_addr, hostaddr->h_addr_list[0], hostaddr->h_length);
     server.sin_family = AF_INET;
-    server.sin_port = htons( port );
+    server.sin_port = htons( server_port );
 
     if (connect(socket_desc , (struct sockaddr *)&server , sizeof(server)) == -1) {
 	perror("Connection failed");
@@ -180,7 +225,6 @@ int init_connection(int argc , char *argv[]) {
 int
 process_connection(int socket_desc)
 {
-    uint8_t wbuffer[256];
     uint8_t buffer[8192];
     int total = 0;
     int used = 0;
@@ -249,16 +293,15 @@ process_connection(int socket_desc)
 			break; // Read more.
 		    } else {
 			// We have enough bytes for packet number [packet_id]
-
-			process_packet(packet_id, buffer+used, socket_desc);
-
+			int plen = msgsize[packet_id];
 			if (msgsize[packet_id] <= 0) {
 			    printf("Received unknown packet id: %d\n", packet_id);
-			    break;
-			}
+			    plen = 1;
+			} else
+			    process_packet(packet_id, buffer+used, socket_desc);
 
 			// Add the bytes we've just used.
-			used += msgsize[packet_id];
+			used += plen;
 			// If we've used everything clear the buffer.
 			if (used == total)
 			    used = total = 0;
@@ -469,7 +512,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 }
 
 void
-print_text(char * prefix, uint8_t * str)
+print_text(const char * prefix, const uint8_t * str)
 {
     static int toansi[] = { 30, 34, 32, 36, 31, 35, 33, 37 };
     if (prefix && *prefix)
@@ -478,6 +521,12 @@ print_text(char * prefix, uint8_t * str)
 	printf("\033[;40;93m");
     int col = 0, len=64;
     while(len>0 && (str[len-1] == ' ' || str[len-1] == '\0')) len--;
+    if (chat_log) {
+	if (prefix && *prefix)
+	    fprintf(chat_log, "%s %.*s\n", prefix, len, str);
+	else
+	    fprintf(chat_log, "%.*s\n", len, str);
+    }
     for(int i=0; i<len; i++) {
 	if (col) {
 	    if (isascii(str[i]) && isxdigit(str[i])) {
@@ -767,7 +816,7 @@ send_pkt_setblock(int socket_desc, int x, int y, int z, int block)
 void
 send_pkt_extinfo(int socket_desc)
 {
-static struct tx_extn { char extname[65]; uint8_t vsn; } extns[] = 
+static struct tx_extn { char extname[65]; uint8_t vsn; } extns[] =
     {
 	{ "CustomBlocks", 1 },
 	{ "FullCP437", 1 },
@@ -776,16 +825,17 @@ static struct tx_extn { char extname[65]; uint8_t vsn; } extns[] =
 	{ "LongerMessages", 1 }
     };
 
-    uint8_t wbuf[100 + 69*sizeof(extns)/sizeof(*extns)];
+    const int extno = sizeof(extns)/sizeof(*extns);
+    uint8_t wbuf[100 + 69*extno];
     uint8_t * wbuffer = wbuf;
 
     wbuffer[0] = 0x10;
     pad_nbstring(wbuffer+1, "minichat");
     wbuffer[65] = 0;
-    wbuffer[66] = sizeof(extns)/sizeof(*extns);
+    wbuffer[66] = extno;
     wbuffer += 67;
 
-    for(int i = 0; i< sizeof(extns)/sizeof(*extns); i++) {
+    for(int i = 0; i < extno; i++) {
 
 	wbuffer[0] = 0x11;
 	pad_nbstring(wbuffer+1, extns[i].extname);
@@ -805,7 +855,7 @@ process_user_message(int socket_desc, char * txbuf)
     int b, x, y, z;
 
     // Convert a "/pl" command into a setblock packet
-    if (sscanf(txbuf, "/%.60s %d %d %d %d %.60s", cmd, &b, &x, &y, &z, xtra) == 5) {
+    if (sscanf(txbuf, "/%60s %d %d %d %d %60s", cmd, &b, &x, &y, &z, xtra) == 5) {
 	if (b >= 0 && b < 66 && strcasecmp(cmd, "pl") == 0) {
 	    send_pkt_setblock(socket_desc, x, y, z, b);
 	    return;
@@ -829,7 +879,7 @@ send_pkt_message(int socket_desc, char * txbuf)
     txwbuf[j] = 0;
     txbuf = txwbuf;
 #endif
-    char wbuffer[128];
+    uint8_t wbuffer[128];
     wbuffer[0] = 0x0d; wbuffer[1] = 0xFF;
     while(len>64) {
 	if (extn_longermessages) wbuffer[1] = 1;
@@ -841,6 +891,75 @@ send_pkt_message(int socket_desc, char * txbuf)
     pad_nbstring(wbuffer+2, txbuf);
     write(socket_desc, wbuffer, 2+64);
 }
+
+/* Message packet sizes, send and receive use the same list.
+ * Note that the protocol does NOT include length fields.
+ *
+ * This is all defined base and CPE packets.
+ */
+int msgsize[256] = {
+    /* 0x00 */ 131,             /* Ident */
+    /* 0x01 */ 1,               /* Ping */
+    /* 0x02 */ 1,               /* LevelInit */
+    /* 0x03 */ 1024+4,          /* LevelData */
+    /* 0x04 */ 7,               /* LevelEnd */
+    /* 0x05 */ 0,               /* Client setblock */
+    /* 0x06 */ 8,               /* SetBlock */
+    /* 0x07 */ 2+64+6+2,        /* Spawn Entity */
+    /* 0x08 */ 2+6+2,           /* Position */
+    /* 0x09 */ 7,               /* Entity Move and Rotate */
+    /* 0x0a */ 5,               /* Entity Move */
+    /* 0x0b */ 4,               /* Entiry Rotate */
+    /* 0x0c */ 2,               /* Remove Entity */
+    /* 0x0d */ 2+64,            /* Message */
+    /* 0x0e */ 1+64,            /* Disconnect Message */
+    /* 0x0f */ 2,               /* SetOP */
+
+    /* CPE starts here */
+    /* 0x10 */ 67,              /* ExtInfo */
+    /* 0x11 */ 69,              /* ExtEntry */
+    /* 0x12 */ 3,               /* ClickDistance */
+    /* 0x13 */ 2,               /* CustBlock */
+
+    /* These are not implemented */
+    /* 0x14 */ 3,               /* HELDBLOCK */
+    /* 0x15 */ 134,             /* SETHOTKEY */
+    /* 0x16 */ 196,             /* PLAYERNAME */
+    /* 0x17 */ 130,             /* ADDENTv1 */
+    /* 0x18 */ 3,               /* RMENT */
+    /* 0x19 */ 8,               /* MAPCOLOUR */
+    /* 0x1a */ 86,              /* ADDZONE */
+    /* 0x1b */ 2,               /* RMZONE */
+    /* 0x1c */ 4,               /* BLOCKPERM */
+    /* 0x1d */ 66,              /* CHANGEMDL */
+    /* 0x1e */ 69,              /* MAPAPPEAR */
+    /* 0x1f */ 2,               /* WEATHER */
+    /* 0x20 */ 8,               /* HACKCTL */
+    /* 0x21 */ 138,             /* ADDENT */
+    /* 0x22 */ 15,              /* PLAYERCLK */ /*ClientSend*/
+    /* 0x23 */ 80,              /* BLOCKDEF */
+    /* 0x24 */ 2,               /* BLOCKUNDEF */
+    /* 0x25 */ 88,              /* BLOCKDEF2 */
+    /* 0x26 */ 1282,            /* BULKUPDATE */
+    /* 0x27 */ 6,               /* TEXTCOLOUR */
+    /* 0x28 */ 65,              /* TEXURL */
+    /* 0x29 */ 6,               /* MAPPROP */
+    /* 0x2a */ 7,               /* ENTITYPROP */
+    /* 0x2b */ 4,               /* PINGPONG */  /*ClientSend&Rcv*/
+    /* 0x2c */ 3,               /* INVORDER */
+    /* 0x2d */ 3,               /* HOTBAR */
+    /* 0x2e */ 9,               /* SETSPAWN */
+    /* 0x2f */ 16,              /* VELOCITY */
+    /* 0x30 */ 36,              /* DEFEFFECT */
+    /* 0x31 */ 26,              /* USEEFFECT */
+    /* 0x32 */ 116,             /* DEFMODEL */
+    /* 0x33 */ 167,             /* DEFMODELPART */
+    /* 0x34 */ 2,               /* RMMODEL */
+    /* 0x35 */ 66,              /* PLUGINMSG */
+    /* 0x36 */ 12,              /* TELEPORT */
+    0
+
+};
 
 #ifndef NO_TICKER
 void
@@ -975,8 +1094,8 @@ move_player(int uid)
     int x = users[uid].posn.x;
     int y = users[uid].posn.y;
     int z = users[uid].posn.z;
-    int h = users[uid].posn.h;
-    int v = users[uid].posn.v;
+    // int h = users[uid].posn.h;
+    // int v = users[uid].posn.v;
 
     if (!posn.valid) {
 	nearest_user = -1;

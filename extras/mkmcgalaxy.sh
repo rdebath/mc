@@ -72,7 +72,7 @@ main() {
     esac
 
     case "$1" in
-    df ) build "$0" ; exit ;;
+    df ) build "$PGM" ; exit ;;
 
     build_* ) BUILD="$1" ; shift ;;
     all ) BUILD="build_$1"; shift ;;
@@ -181,6 +181,11 @@ init_setup() {
     EXTRAFLAG=
     CHECKOUT=
     SSH_HOST=
+    PGM="$0"
+    case "$PGM" in
+    /* ) ;;
+    * ) PGM="$(pwd)/$PGM" ;;
+    esac
 
     [ -d "$MC" ] || LOCALSOURCE=no
 
@@ -197,7 +202,7 @@ build_std() {
     then
 	DKF="/tmp/_tmp.dockerfile.$$"
 	mkdir -p "$DKF"
-	build "$0" > "$DKF"/Dockerfile
+	build "$PGM" > "$DKF"/Dockerfile
 	tar czf - --exclude=.git \
 	    -C "$DKF" Dockerfile \
 	    -C "$MC" MCGalaxy |
@@ -218,7 +223,7 @@ build_std() {
 
 	DKF="/tmp/_tmp.dockerfile.$$"
 	mkdir -p "$DKF"
-	build "$0" > "$DKF"/Dockerfile
+	build "$PGM" > "$DKF"/Dockerfile
 	git worktree remove /tmp/_wt."$CHECKOUT"/MCGalaxy 2>/dev/null ||:
 	git worktree add /tmp/_wt."$CHECKOUT"/MCGalaxy "$CHECKOUT^0"
 
@@ -239,7 +244,7 @@ build_std() {
 
     elif [ "$SSH_HOST" != '' ]
     then
-	build "$0" > /tmp/Dockerfile
+	build "$PGM" > /tmp/Dockerfile
 	scp -p /tmp/Dockerfile "$SSH_HOST":/tmp/Dockerfile
 	ssh -qt "$SSH_HOST" \
 	docker build -t "$IMAGE" \
@@ -252,7 +257,7 @@ build_std() {
 	    - \</tmp/Dockerfile
 
     else
-	build "$0" |
+	build "$PGM" |
 	docker build -t "$IMAGE" \
 	    ${TARGET:+"--target=$TARGET"} \
 	    ${FROM:+"--build-arg=FROM=$FROM"} \
@@ -369,7 +374,7 @@ DOCKERFILE
 ################################################################################
 
 # Base linux distribution, Debian works fine
-ARG FROM=debian:bullseye
+ARG FROM=debian:bookworm
 # Supernova also worked.
 ARG SERVER=MCGalaxy
 # GITREPO will be pulled if the context doesn't contain "$SERVER.sln"

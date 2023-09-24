@@ -10,7 +10,7 @@ esac
 
 [ "$(echo '"+"'|jq -r .)" != + ] && { echo>&2 "Please install 'jq'"; exit 1; }
 
-[ "$1" = '' ] && {
+[ "$#" = 0 ] && {
     echo>&2 "Usage: $0 [-v] [-c] Host [UserName] [Password] [MFACode]"
     echo>&2 "The Password and Code are usually optional "
     echo>&2 "Omitting the username just lists matching hosts"
@@ -97,8 +97,11 @@ HASH=
 
 [ "$NICK" != '' ] && {
     case "$SEARCH" in
+    "" ) exit 0 ;;
     [0-9]*.*.*.*:*[0-9] )
 	HASH="$(echo -n "$SEARCH" | md5sum - | awk '{print $1;}')" ;;
+    [0-9]*.*.*.*[0-9] )
+	HASH="$(echo -n "$SEARCH:25565" | md5sum - | awk '{print $1;}')" ;;
     esac
 }
 
@@ -107,7 +110,7 @@ JSON3=''
 api_login
 
 if [ "$HASH" != '' ]
-then echo>&2 "Using $HASH generated from $SEARCH"
+then echo>&2 "Using $HASH generated from '$SEARCH'"
 elif [ "${#SEARCH}" = 32 ]
 then HASH="$SEARCH"
      echo>&2 "Using $HASH directly"
