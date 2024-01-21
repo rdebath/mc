@@ -270,7 +270,10 @@ ALL_FLAGS="-O1 -s -fno-stack-protector -fno-math-errno -Qn -w"
 
 build_win32() {
   echo "Building win32.."
-  cp $ROOT_DIR/misc/CCicon_32.res $ROOT_DIR/src/CCicon_32.res
+  [ -f $ROOT_DIR/misc/CCicon_32.res ] &&
+      cp $ROOT_DIR/misc/CCicon_32.res $ROOT_DIR/src/CCicon_32.res
+  [ -f $ROOT_DIR/misc/windows/CCicon_32.res ] &&
+      cp $ROOT_DIR/misc/windows/CCicon_32.res $ROOT_DIR/src/CCicon_32.res
 
   EXE=ClassiCube.32.exe
   rm -f "$EXE" ||:
@@ -279,13 +282,16 @@ build_win32() {
   echo "Building win32 OpenGL.."
   EXE=ClassiCube.32-opengl.exe
   rm -f "$EXE" ||:
-  $WIN32_CC *.c $ALL_FLAGS $WIN32_FLAGS -o "$EXE" CCicon_32.res -DCC_COMMIT_SHA=\"$LATEST\" -DCC_BUILD_MANUAL -DCC_BUILD_WIN -DCC_BUILD_GL -DCC_BUILD_WINGUI -DCC_BUILD_WGL -DCC_BUILD_WINMM -DCC_BUILD_WININET -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32 -lopengl32
+  $WIN32_CC *.c $ALL_FLAGS $WIN32_FLAGS -o "$EXE" CCicon_32.res -DCC_COMMIT_SHA=\"$LATEST\" -DCC_BUILD_MANUAL -DCC_BUILD_WIN -DCC_BUILD_GL -DCC_BUILD_WINGUI -DCC_BUILD_WGL -DCC_BUILD_WINMM -DCC_BUILD_HTTPCLIENT -DCC_BUILD_SCHANNEL -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32 -lopengl32
 
 }
 
 build_win64() {
   echo "Building win64.."
-  cp $ROOT_DIR/misc/CCicon_64.res $ROOT_DIR/src/CCicon_64.res
+  [ -f $ROOT_DIR/misc/CCicon_64.res ] &&
+      cp $ROOT_DIR/misc/CCicon_64.res $ROOT_DIR/src/CCicon_64.res
+  [ -f $ROOT_DIR/misc/windows/CCicon_64.res ] &&
+      cp $ROOT_DIR/misc/windows/CCicon_64.res $ROOT_DIR/src/CCicon_64.res
   
   EXE=ClassiCube.64.exe
   rm -f "$EXE" ||:
@@ -294,7 +300,7 @@ build_win64() {
   echo "Building win64 OpenGL.."
   EXE=ClassiCube.64-opengl.exe
   rm -f "$EXE" ||:
-  $WIN64_CC *.c $ALL_FLAGS $WIN64_FLAGS -o "$EXE" CCicon_64.res -DCC_COMMIT_SHA=\"$LATEST\" -DCC_BUILD_MANUAL -DCC_BUILD_WIN -DCC_BUILD_GL -DCC_BUILD_WINGUI -DCC_BUILD_WGL -DCC_BUILD_WINMM -DCC_BUILD_WININET -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32 -lopengl32
+  $WIN64_CC *.c $ALL_FLAGS $WIN64_FLAGS -o "$EXE" CCicon_64.res -DCC_COMMIT_SHA=\"$LATEST\" -DCC_BUILD_MANUAL -DCC_BUILD_WIN -DCC_BUILD_GL -DCC_BUILD_WINGUI -DCC_BUILD_WGL -DCC_BUILD_WINMM -DCC_BUILD_HTTPCLIENT -DCC_BUILD_SCHANNEL -lws2_32 -lwininet -lwinmm -limagehlp -lcrypt32 -lopengl32
 
   if grep -q HACKEDCLIENT *.c
   then

@@ -89,7 +89,7 @@ main() {
     *) echo >&2 "Unknown option '$1', use 'help' option" ; exit 1 ;;
     esac
 
-    [ -d MCGalaxy ] &&
+    [ -d MCGalaxy ] && false &&
 	git -C MCGalaxy describe --tags mcgalaxy/master HEAD | fmt | tr '-' ' ' |
 	    awk '{ if(NF == 4 && $1 == $2) print $1 "+" $3;
 		else print $1 "-" $2 "-" $3 "+" ($5-$2);}' \

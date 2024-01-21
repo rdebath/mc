@@ -7,16 +7,6 @@
 #include <math.h>
 
 /*
- * TODO: Between timestamps.
- *       If it's before TS1 place the new in the old array
- *       If it's between them place the new in the new array.
- *       If it's after TS2 place the old in the new array.
- *
- * TODO: Change to pointers as size fields stick at max values?
- *       (but overflows are very possible)
- */
-
-/*
  * These are physics visuals only.
  * newest: Get the newest known block Id, after of last change
  * oldest: Get the oldest known block Id, before of first change.
@@ -26,6 +16,9 @@
  * allblocks: Show a /pl command for evey update. (incl physics)
  * perday: recreate cbdb as a one change per day file.
  * last_order: Newest block in order they are set in file (incl physics)
+ *
+ * See also:
+ *    https://github.com/ClassiCube/MCGalaxy-Plugins/blob/master/CmdPruneDB.cs
  */
 
 FILE * ofd;
@@ -55,6 +48,7 @@ static enum { newest = 0, oldest = 1, deleteblocks = 2, filtered_new = 3, allblo
 	perday = 5, last_order = 6, last_scan = 7
     } method = newest;
 int guest = 0;
+int rollup = 0;
 
 int use_visuals = -1;
 char physics_visual[256] = {
@@ -97,6 +91,12 @@ void main(int argc, char **argv)
 	if (strcmp(argv[0], "-A") == 0) { method = allblocks; continue; }
 	if (strcmp(argv[0], "-g") == 0) { guest = 1; continue; }
 	if (strcmp(argv[0], "-y") == 0) { method = perday; continue; }
+
+	if (strncmp(argv[0], "-y=", 3) == 0) {
+	    method = perday;
+	    rollup = atoi(argv[0]+3);	// Days to merge into start of -sdate=
+	    continue;
+	}
 	if (strncmp(argv[0], "-sdate=", 7) == 0 || strncmp(argv[0], "-edate=", 7) == 0) {
 	    struct tm *ptm, tm={.tm_isdst = -1};
 	    ptm = getdate(argv[0]+7);
@@ -112,6 +112,7 @@ void main(int argc, char **argv)
 	    } else filt_edate = t;
 	    continue;
 	}
+
 	fprintf(stderr, "Unknown option %s\n", argv[0]);
 	exit(1);
     }
@@ -218,10 +219,7 @@ do_file_1(FILE * ifd)
 	int Type = UIntLE16(chunk_buf+14) & 0xFFF;
 
 	if (filt_edate>filt_sdate && (unix_ts < filt_sdate || unix_ts > filt_edate))
-	{
-	    //printf("%d..%d -> %d\n", filt_sdate, filt_edate, unix_ts);
 	    continue;
-	}
 
 	int OldBlock = chunk_buf[12];
 	OldBlock |= ((chunk_buf[15]&0x40)<<2);
@@ -400,8 +398,15 @@ do_file_2(FILE * ifd)
         time_t unix_ts = (time_t)1262304000 + Timestamp;
         int Type = UIntLE16(chunk_buf+14) & 0xFFF;
 
-	if (filt_edate>filt_sdate && (unix_ts < filt_sdate || unix_ts > filt_edate))
-	    continue;
+	if (filt_edate>filt_sdate) {
+	    if (unix_ts > filt_edate) continue;
+	    if (unix_ts < filt_sdate) {
+		if (rollup <= 0) continue;
+		if (unix_ts < filt_sdate-86400*rollup) continue;
+		unix_ts = filt_sdate-86400; // Day before start of keep list
+		Timestamp = unix_ts - (time_t)1262304000;
+	    }
+	}
 
         int OldBlock = chunk_buf[12];
         OldBlock |= ((chunk_buf[15]&0x40)<<2);
