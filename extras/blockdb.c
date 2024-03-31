@@ -49,6 +49,7 @@ static enum { newest = 0, oldest = 1, deleteblocks = 2, filtered_new = 3, allblo
     } method = newest;
 int guest = 0;
 int rollup = 0;
+int keep_nops;
 
 int use_visuals = -1;
 char physics_visual[256] = {
@@ -514,9 +515,11 @@ process_day(sort_chunk_t * chunk_list, int chunk_list_cnt)
 	}
 
 	if (i+1>= chunk_list_cnt || chunk_list[i+1].Index != chunk_list[j].Index) {
-	    // Humm, first update is a NOP ? Let's not remove it.
-	    if (curr_chunk.NewBlock == curr_chunk.OldBlock && block_array[curr_chunk.Index] == 0xFFFF)
-		curr_chunk.OldBlock = !curr_chunk.OldBlock;
+	    if (keep_nops) {
+		// Humm, first update is a NOP ? Let's not remove it.
+		if (curr_chunk.NewBlock == curr_chunk.OldBlock && block_array[curr_chunk.Index] == 0xFFFF)
+		    curr_chunk.OldBlock = !curr_chunk.OldBlock;
+	    }
 
 	    block_array[curr_chunk.Index] = curr_chunk.NewBlock;
 

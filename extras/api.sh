@@ -29,9 +29,6 @@ CODE="$4"
 NICKF=$(echo "$NICK" | tr 'A-Z' 'a-z')
 
 api_login() {
-    # Old filename
-    [ -f "$COOKIES"/.cookie.$NICKF ] &&
-	mv "$COOKIES"/.cookie.$NICKF "$COOKIES"/cookie.$NICKF
 
     [ "$NICK" != '' ] && {
 	mkdir -p -m 0700 "$COOKIES"
