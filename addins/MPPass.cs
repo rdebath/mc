@@ -48,13 +48,13 @@ namespace Core {
 #if MCGalaxy
             if (message == "-salt") {
                 foreach (Heartbeat hb in Heartbeat.Heartbeats) {
-                    p.Message("The current salt is {0} for {1}", hb.Salt, hb.URL);
+                    p.Message("The current salt is {0} for {1}", hb.Auth.Salt, hb.URL);
                 }
             } else {
                 foreach (Heartbeat hb in Heartbeat.Heartbeats) {
                     p.Message("MPPass for {0} is {1} on {2}",
                         message,
-                        Server.CalcMppass(message, hb.Salt),
+                        Server.CalcMppass(message, hb.Auth.Salt),
                         hb.URL);
                 }
 #endif

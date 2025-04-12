@@ -29,6 +29,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
+using MCGalaxy;
 using MCGalaxy.Maths;
 using BlockID = System.UInt16;
 using MCGalaxy.Commands;
@@ -113,9 +114,36 @@ namespace MCGalaxy
             // Setup so I can use the delay command.
             CommandData mbdata = target.DefaultCmdData;
             mbdata.Context = CommandContext.MessageBlock;
-            target.HandleCommands(cmds, mbdata);
-            p.Message("Commands sent to {0}", target.FullName);
+
+            if (target != p) {
+                target.HandleCommands(cmds, mbdata);
+                p.Message("Commands sent to {0}", target.FullName);
+            } else {
+
+                foreach (string rawc in cmds) {
+                    string raw = rawc.Replace("$level", p.level.name);
+                    string[] parts = raw.SplitSpaces(2);
+                    string cmd = parts[0].ToLower();
+                    string args = parts.Length > 1 ? parts[1] : "";
+
+                    if (cmd.Length == 0) continue;
+                    if (cmd[0] == '#') continue;
+
+                    Command.Search(ref cmd, ref args);
+                    Command command = Command.Find(cmd);
+                    if (command == null) {
+                        p.Message("Command {0} not found", cmd);
+                        return;
+                    }
+                    if (!p.CanUse(command)) {
+                        command.Permissions.MessageCannotUse(p);
+                        continue;
+                    }
+                    command.Use(target, args, mbdata);
+                }
+            }
             cmds = null;
+
         }
     }
 
@@ -197,9 +225,36 @@ namespace MCGalaxy
 
             // Setup so I can use the delay command.
             mbdata.Context = CommandContext.MessageBlock;
-            target.HandleCommands(cmds, mbdata);
+
+            if (target != p) {
+                target.HandleCommands(cmds, mbdata);
+                p.Message("Commands sent to {0}", target.FullName);
+            } else {
+
+                foreach (string rawc in cmds) {
+                    string raw = rawc.Replace("$level", p.level.name);
+                    string[] parts = raw.SplitSpaces(2);
+                    string cmd = parts[0].ToLower();
+                    string args = parts.Length > 1 ? parts[1] : "";
+
+                    if (cmd.Length == 0) continue;
+                    if (cmd[0] == '#') continue;
+
+                    Command.Search(ref cmd, ref args);
+                    Command command = Command.Find(cmd);
+                    if (command == null) {
+                        p.Message("Command {0} not found", cmd);
+                        return;
+                    }
+                    if (!p.CanUse(command)) {
+                        command.Permissions.MessageCannotUse(p);
+                        continue;
+                    }
+                    command.Use(target, args, mbdata);
+                }
+            }
             cmds = null;
-            p.Message("Command list started by {0}", target.FullName);
+
         }
     }
 
@@ -1324,8 +1379,8 @@ namespace MCGalaxy
 
 
 #if false
-//reference System.dll
-//reference System.Core.dll
+// //reference System.dll
+// //reference System.Core.dll
 
 // This is slow with huge strings.
 using System.Text.RegularExpressions;

@@ -81,6 +81,8 @@ main() {
     local ) BUILD=build_local_version ; shift ;;
     [0-9]*.* ) BUILD=build_version ;;
 
+    mono ) MONO_VERSION="$2"; shift; shift ;;
+
     "") if [ -d MCGalaxy ]
 	then BUILD=build_default
 	else BUILD=build_latest
@@ -142,7 +144,7 @@ build_version() {
     else IMAGE=mcgalaxy:"$1-$2"
     fi
 
-    EXTRAFLAG="--build-arg=GITTAG=$1"
+    tag_to_commitish "$1"
     TARGET=
     FROM=
     MONO_VERSION="$3"
@@ -161,8 +163,7 @@ build_local_version() {
     else IMAGE=mcgalaxy:"$1-$2"
     fi
 
-    CHECKOUT="$1"
-    EXTRAFLAG=
+    tag_to_commitish "$1"
     TARGET=
     FROM=
     MONO_VERSION="$3"
@@ -178,7 +179,6 @@ init_setup() {
     IMAGE=''
     MONO_VERSION=
     LOCALSOURCE=yes
-    EXTRAFLAG=
     CHECKOUT=
     SSH_HOST=
     PGM="$0"
@@ -188,15 +188,10 @@ init_setup() {
     esac
 
     [ -d "$MC" ] || LOCALSOURCE=no
-
-    # msbuild only
-    # COMPFLG=--build-arg=COMPILE_FLAGS='SOME_OTHER_FLAG;TEN_BIT_BLOCKS'
 }
 
 build_std() {
-    COMPFLG=
-
-    echo Build "$IMAGE" $TARGET $FROM $COMPFLG $EXTRAFLAG $MONO_VERSION
+    echo Build "$IMAGE" $TARGET $FROM $EXTRAFLAG $MONO_VERSION
 
     if [ "$LOCALSOURCE" = yes ]&&[ "$CHECKOUT" = '' ]
     then
@@ -209,7 +204,6 @@ build_std() {
 	docker build -t "$IMAGE" \
 	    ${TARGET:+"--target=$TARGET"} \
 	    ${FROM:+"--build-arg=FROM=$FROM"} \
-	    $COMPFLG \
 	    $EXTRAFLAG \
 	    --build-arg=UID=$(id -u) \
 	    ${MONO_VERSION:+"--build-arg=MONO_VERSION=$MONO_VERSION"} \
@@ -225,14 +219,17 @@ build_std() {
 	mkdir -p "$DKF"
 	build "$PGM" > "$DKF"/Dockerfile
 	git worktree remove /tmp/_wt."$CHECKOUT"/MCGalaxy 2>/dev/null ||:
-	git worktree add /tmp/_wt."$CHECKOUT"/MCGalaxy "$CHECKOUT^0"
+	[ -d /tmp/_wt."$CHECKOUT" ] && rm -rf /tmp/_wt."$CHECKOUT"
+	if [ "$COMMITISH" = '' ]
+	then git worktree add /tmp/_wt."$CHECKOUT"/MCGalaxy "$CHECKOUT^0"
+	else git worktree add /tmp/_wt."$CHECKOUT"/MCGalaxy "$COMMITISH"
+	fi
 
 	tar czf - --exclude=.git -C "$DKF" Dockerfile \
 	    -C /tmp/_wt."$CHECKOUT" MCGalaxy |
 	docker build -t "$IMAGE" \
 	    ${TARGET:+"--target=$TARGET"} \
 	    ${FROM:+"--build-arg=FROM=$FROM"} \
-	    $COMPFLG \
 	    $EXTRAFLAG \
 	    --build-arg=UID=$(id -u) \
 	    ${MONO_VERSION:+"--build-arg=MONO_VERSION=$MONO_VERSION"} \
@@ -244,31 +241,31 @@ build_std() {
 
     elif [ "$SSH_HOST" != '' ]
     then
+	tag_to_extra
 	build "$PGM" > /tmp/Dockerfile
 	scp -p /tmp/Dockerfile "$SSH_HOST":/tmp/Dockerfile
 	ssh -qt "$SSH_HOST" \
 	docker build -t "$IMAGE" \
 	    ${TARGET:+"--target=$TARGET"} \
 	    ${FROM:+"--build-arg=FROM=$FROM"} \
-	    $COMPFLG \
 	    $EXTRAFLAG \
 	    --build-arg=UID=$(id -u) \
 	    ${MONO_VERSION:+"--build-arg=MONO_VERSION=$MONO_VERSION"} \
 	    - \</tmp/Dockerfile
 
     else
+	tag_to_extra
 	build "$PGM" |
 	docker build -t "$IMAGE" \
 	    ${TARGET:+"--target=$TARGET"} \
 	    ${FROM:+"--build-arg=FROM=$FROM"} \
-	    $COMPFLG \
 	    $EXTRAFLAG \
 	    --build-arg=UID=$(id -u) \
 	    ${MONO_VERSION:+"--build-arg=MONO_VERSION=$MONO_VERSION"} \
 	    -
     fi
 
-    echo Build complete "$IMAGE" $TARGET $FROM $COMPFLG $EXTRAFLAG $MONO_VERSION
+    echo Build complete "$IMAGE" $TARGET $FROM $EXTRAFLAG $MONO_VERSION
 }
 
 build_parts() {
@@ -325,6 +322,44 @@ build_llvm() {
     build_std
 }
 
+tag_to_commitish() {
+    CHECKOUT="$1"
+    case "$CHECKOUT" in
+    # Some of the old ones have bad or missing tags.
+    0.0.0.9 ) COMMITISH=52f1adae4b6f5ef02dc947c27dd5c68e54998e98 ;;
+    1.0.0.0 ) COMMITISH=877b26159b84b30a4f4fb00a66e4bc1fecafe6e3 ;;
+    1.0.0.1 ) COMMITISH=13ff64358f4d1ca79a5eb49d99e87d929ba6daf3 ;;
+    1.0.0.2 ) COMMITISH=c1ee045b888c687a802cce78147f6392a02e114e ;;
+    1.0.3.1 ) COMMITISH=7fa4f7c2938ad97959baa352dbf0e0cff3f094ff ;;
+    1.5.0.7 ) COMMITISH=5182a1a2dd1f18cd6f5d0c1de615499dc8236d3e ;;
+    1.5.0.8 ) COMMITISH=261cd468dee00a5060629c584c742e292b66de11 ;;
+    1.5.1.0 ) COMMITISH=b32a63fc5ee9c9398ac7a24b53668f9220b55a9c ;;
+    1.5.1.1 ) COMMITISH=d3e7fe60e0451c60e84ee5e4fcc565a37c9c38af ;;
+    1.5.1.2 ) COMMITISH=568632bb81c8ee058f991d1b05cf5030c899133a ;;
+    1.6.0.0 ) COMMITISH=d4fa2d2bd5ca807e70998aba7cc0b296eea1848a ;;
+    1.6.0.2 ) COMMITISH=afcd10e8995aca745521ecdf040729b0ccc1170f ;;
+    1.6.9.0 ) COMMITISH=005232abd4f48fb2def723b73e95662cc4ef5efe ;;
+    1.7.0.0 ) COMMITISH=92e13ddc6034fb9af41ccb6b378005b64c0b270a ;;
+    1.7.3.0 ) COMMITISH=0fa039edb6309f29376cc00a38dedbb2de3587bc ;;
+    1.8.1.0 ) COMMITISH=78e57fcb227b5d06dcd725bfdd6bbd6cfb4b68c6 ;;
+    1.8.2.0 ) COMMITISH=f2e7606b805cb75ea7839a4878cab08065be2fec ;;
+    1.8.3.0 ) COMMITISH=59a5462e47b5d6d8be2f4eff753e6a5ca35bf61c ;;
+    1.8.4.0 ) COMMITISH=b3b9dae5cb9a74806550e34a4afb06102ecf313f ;;
+    1.8.9.2 ) COMMITISH=b5a4a8a8ae06af7a0aa807958ec18fc57cc24864 ;;
+    1.9.0.3 ) COMMITISH=f32b0135e7cc3ac2f113c9b76b84f448ef47d860 ;;
+    1.9.1.1 ) COMMITISH=2b5911ce04158f269452cf4fa5e657d07bbf905e ;;
+    1.9.2.1 ) COMMITISH=961cf05972ee95af7ddf77a1925cae70b0a9788f ;;
+    1.9.2.4 ) COMMITISH=816d52b6ad4a912ae748e7ce9f98d09be711d969 ;;
+    * ) COMMITISH= ;;
+    esac
+}
+
+tag_to_extra() {
+    [ "$CHECKOUT" != '' ] && EXTRAFLAG="$EXTRAFLAG --build-arg=GITTAG=$CHECKOUT"
+    [ "$COMMITISH" != '' ] && EXTRAFLAG="$EXTRAFLAG --build-arg=COMMITISH=$COMMITISH"
+    :
+}
+
 ################################################################################
 # This function takes this script and extracts the Dockerfile that follows
 # the line that starts with "DOCKERFILE". Any sections between a "BEGIN" and
@@ -378,13 +413,14 @@ ARG FROM=debian:bookworm
 # Supernova also worked.
 ARG SERVER=MCGalaxy
 # GITREPO will be pulled if the context doesn't contain "$SERVER.sln"
-ARG GITREPO=https://github.com/UnknownShadow200/${SERVER}
-# Pick a specific version tag
+ARG GITREPO=https://github.com/UnknownShadow200/${SERVER}.git
+# Pick a specific version tag (COMMITISH is for *any* commit checkout)
 ARG GITTAG=
+ARG COMMITISH=
 # To choose one compile for /p:DefineConstants
 ARG COMPILE_FLAGS=
 # Choose a Mono version from mono-project.com, "-" means current.
-# If you blank this out you'll get "mono-devel" from Debian (5.18 in Buster, 6.8 in bullseye).
+# If you blank this out apt will be used to install "mono-devel"
 # If $FROM already contains /usr/bin/mono, this has no effect.
 ARG MONO_VERSION=
 
@@ -428,7 +464,7 @@ COPY . .
 
 ARG GITREPO
 ARG GITTAG
-ADD --chown=1000:1000 ${GITREPO}/commits/master.atom .
+ARG COMMITISH
 
 WORKDIR /opt/mcgalaxy
 BEGIN
@@ -440,39 +476,11 @@ BEGIN
 }
 
 [ ! -e ${SERVER}/${SERVER}.sln -a ".$GITREPO" != '.' ] && {
-    COMMITISH=
-    case "$GITTAG" in
-    # Some of the old ones have bad or missing tags.
-    1.0.0.0 ) COMMITISH=877b26159b84b30a4f4fb00a66e4bc1fecafe6e3 ;;
-    1.0.0.1 ) COMMITISH=f5c656a38d7e711249ea93615b1aa99a288f583c ;;
-    1.0.0.2 ) COMMITISH=c1ee045b888c687a802cce78147f6392a02e114e ;;
-    1.0.3.1 ) COMMITISH=7fa4f7c2938ad97959baa352dbf0e0cff3f094ff ;;
-    1.5.0.7 ) COMMITISH=5182a1a2dd1f18cd6f5d0c1de615499dc8236d3e ;;
-    1.5.0.8 ) COMMITISH=261cd468dee00a5060629c584c742e292b66de11 ;;
-    1.5.1.0 ) COMMITISH=b32a63fc5ee9c9398ac7a24b53668f9220b55a9c ;;
-    1.5.1.1 ) COMMITISH=d3e7fe60e0451c60e84ee5e4fcc565a37c9c38af ;;
-    1.5.1.2 ) COMMITISH=568632bb81c8ee058f991d1b05cf5030c899133a ;;
-    1.6.0.0 ) COMMITISH=d4fa2d2bd5ca807e70998aba7cc0b296eea1848a ;;
-    1.6.0.2 ) COMMITISH=afcd10e8995aca745521ecdf040729b0ccc1170f ;;
-    1.6.9.0 ) COMMITISH=005232abd4f48fb2def723b73e95662cc4ef5efe ;;
-    1.7.0.0 ) COMMITISH=92e13ddc6034fb9af41ccb6b378005b64c0b270a ;;
-    1.7.3.0 ) COMMITISH=0fa039edb6309f29376cc00a38dedbb2de3587bc ;;
-    1.8.1.0 ) COMMITISH=78e57fcb227b5d06dcd725bfdd6bbd6cfb4b68c6 ;;
-    1.8.2.0 ) COMMITISH=f2e7606b805cb75ea7839a4878cab08065be2fec ;;
-    1.8.3.0 ) COMMITISH=59a5462e47b5d6d8be2f4eff753e6a5ca35bf61c ;;
-    1.8.4.0 ) COMMITISH=b3b9dae5cb9a74806550e34a4afb06102ecf313f ;;
-    1.8.9.2 ) COMMITISH=b5a4a8a8ae06af7a0aa807958ec18fc57cc24864 ;;
-    1.9.0.3 ) COMMITISH=f32b0135e7cc3ac2f113c9b76b84f448ef47d860 ;;
-    1.9.1.1 ) COMMITISH=2b5911ce04158f269452cf4fa5e657d07bbf905e ;;
-    1.9.2.1 ) COMMITISH=961cf05972ee95af7ddf77a1925cae70b0a9788f ;;
-    1.9.2.4 ) COMMITISH=816d52b6ad4a912ae748e7ce9f98d09be711d969 ;;
-    esac
-
     git config --global advice.detachedHead false # STFU
     if [ "$COMMITISH" = '' ]
-    then git clone --depth 1 "$GITREPO".git ${SERVER} ${GITTAG:+ -b "${GITTAG}"}
+    then git clone --depth 1 "$GITREPO" ${SERVER} ${GITTAG:+ -b "${GITTAG}"}
     else
-	git clone "$GITREPO".git ${SERVER}
+	git clone "$GITREPO" ${SERVER}
 	git -C ${SERVER} checkout "$COMMITISH"
     fi
     [ "$GITTAG" != '' ] &&
@@ -975,7 +983,7 @@ do [ -e "bin/$BINDIR/$f" ] && { FILES="$FILES bin/$BINDIR/$f" ; continue ; }
     * ) echo >&2 "WARNING: Can't find file $f" ;;
 
     # TODO? For MySql.Data.dll sqlite3_x32.dll sqlite3_x64.dll
-    # 	    From MCGalaxy/MCGalaxy/Server/Maintenance/Updater.cs:
+    #       From MCGalaxy/MCGalaxy/Server/Maintenance/Updater.cs:
     # public const string BaseURL    = "https://raw.githubusercontent.com/UnknownShadow200/MCGalaxy/master/";
 
     esac
@@ -1048,6 +1056,7 @@ termcapinfo * "ti@:te@:G0"
     exec screen -U -D -m "$O"/start_server
 }
 
+STARTTENBIT=0
 case "$VERSION" in
 # These have ten bit but no properties/cpe.properties
 1.9.0.[5-9]|1.9.[12].*|1.9.3.[0-5] )
@@ -1057,27 +1066,37 @@ case "$VERSION" in
     }
     ;;
 # No ten bit build
-1.8.*|1.9.0.* ) ;;
+0.*|1.[0-8].*|1.9.0.* ) ;;
+# Default to 10 bit
+* ) [ ! -f properties/block.properties ] && STARTTENBIT=1 ;;
 esac
 
 if [ -f properties/cpe.properties ]
 then
     if grep -iq 'ExtendedBlocks *= *True' properties/cpe.properties
-    then
-	echo "($(date +%T)) Ten bit blocks version selected"
-	L="$O/lib/${SERVER}_"
-	[ -f "${L}767.dll" ] && {
-	    mv "${L}.dll" "${L}255.dll"
-	    [ -f "${L}.dll.so" ] && mv "${L}.dll.so" "${L}255.dll.so"
-	    [ -f "${L}.dll.mdb" ] && mv "${L}.dll.mdb" "${L}255.dll.mdb"
-	    [ -f "${L}.dll.config" ] && mv "${L}.dll.config" "${L}255.dll.config"
-	    mv "${L}767.dll" "${L}.dll"
-	    [ -f "${L}767.dll.so" ] && mv "${L}767.dll.so" "${L}.dll.so"
-	    [ -f "${L}767.dll.mdb" ] && mv "${L}767.dll.mdb" "${L}.dll.mdb"
-	    [ -f "${L}767.dll.config" ] && mv "${L}767.dll.config" "${L}.dll.config"
-	}
+    then STARTTENBIT=1
+    fi
+elif [ -f properties/block.properties ]
+then
+    if [ "$(awk '/^[0-9]/{n=$1;}END{print n+0;}' properties/block.properties)" -gt 511 ]
+    then STARTTENBIT=1
     fi
 fi
+
+[ "$STARTTENBIT" = '1' ] && {
+    echo "($(date +%T)) Ten bit blocks version selected"
+    L="$O/lib/${SERVER}_"
+    [ -f "${L}767.dll" ] && {
+	mv "${L}.dll" "${L}255.dll"
+	[ -f "${L}.dll.so" ] && mv "${L}.dll.so" "${L}255.dll.so"
+	[ -f "${L}.dll.mdb" ] && mv "${L}.dll.mdb" "${L}255.dll.mdb"
+	[ -f "${L}.dll.config" ] && mv "${L}.dll.config" "${L}255.dll.config"
+	mv "${L}767.dll" "${L}.dll"
+	[ -f "${L}767.dll.so" ] && mv "${L}767.dll.so" "${L}.dll.so"
+	[ -f "${L}767.dll.mdb" ] && mv "${L}767.dll.mdb" "${L}.dll.mdb"
+	[ -f "${L}767.dll.config" ] && mv "${L}767.dll.config" "${L}.dll.config"
+    }
+}
 
 [ -f "$O"/lib/${SERVER}_.dll.so ] &&
     echo "($(date +%T)) AOT compiled version is in use."

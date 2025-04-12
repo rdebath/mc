@@ -34,7 +34,7 @@ namespace Core {
         }
 
         public override void Help(Player p) {
-            p.Message("%T/GC - Set software name");
+            p.Message("%T/GC - Run a DotNET garbage collection cycle");
         }
     }
 }

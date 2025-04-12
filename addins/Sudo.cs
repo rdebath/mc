@@ -53,7 +53,7 @@ namespace MCGalaxy
         //   LevelPermission.Operator, LevelPermission.Admin, LevelPermission.Nobody
         public override LevelPermission defaultRank { get { return LevelPermission.Admin; } }
 
-        // This is for when a player does /Help RawCuboid
+        // This is for when a player does /Help
         public override void Help(Player p)
         {
             p.Message("&T/Sudo&S - Run command with Console permission");

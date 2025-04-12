@@ -1,3 +1,6 @@
+
+/* cc -O3 -o bin/mini_chat mini_chat.c -lz -lm */
+
 #include <fcntl.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -59,15 +62,15 @@ user_list_t users[MAXUSERS+1];
 char my_user_name[65];
 int active_user_count;
 
-#ifndef NO_TICKER
+int disable_ticker = 0;
 int jmp_dx = 0, jmp_dz = 0;
 int posn_st = 0, posn_slower = 0;
 int nearest_user = -1, nearest_is_user = 0;
 int64_t nearest_range = 0, nearest_crange;
 #define sq_range(R) (((R)*32)*((R)*32))
 int nearest_pl_v = 0, nearest_pl_h = 0, nearest_pl_dx = 0, nearest_pl_dz = 0;
-#endif
 
+int tty_enabled = 0;
 int disable_cpe = 0;
 int extensions_offered = 0;
 int extensions_received = 0;
@@ -92,17 +95,15 @@ void send_pkt_move(int socket_desc, xyzhv_t posn);
 void send_pkt_setblock(int socket_desc, int x, int y, int z, int block);
 void send_pkt_extinfo(int socket_desc);
 void send_pkt_message(int socket_desc, char * txbuf);
+int save_lvl_file(char * fn, int gzlevel);
+void set_script_file(char * fn);
+void set_script_delay(int next_delay, int per_cmd);
+int script_ticker(int socket_desc);
 
-#ifdef NO_TICKER
-#define move_player(uid)
-#endif
-
-#ifndef NO_TICKER
 struct timeval last_tick;
 void ticker(int socket_desc);
 void move_player(int);
 int is_clone(char * my_name, char * their_name);
-#endif
 
 char last_motd[64];
 char last_srvr[64];
@@ -144,16 +145,15 @@ set_args(int argc , char *argv[])
 
 	switch(ac) {
 	case 0:
-	    userid = argv[1]; ac++; argc--; argv++;
-
-	    if (strncmp("mc://", userid, 5) == 0) {
+	    if (strncmp("mc://", argv[1], 5) == 0) {
 		// mc://127.0.0.1:25565/Userid/mppass
-		char * url = strdup(userid);
+		char * url = strdup(argv[1]);
 		char * p1 = strchr(url+5, ':');
 		char * p2 = strchr(url+5, '/');
 		if (p1) *p1 = 0; if (p2) *p2 = 0;
-		server_host = strdup(url+5);
-		if (p1 && p2 && p2>p1)
+		if ((url+5)[0])
+		    server_host = strdup(url+5);
+		if (p1 && (!p2 || p2>p1))
 		    server_port = atoi(p1+1);
 		else
 		    server_port = 25565;
@@ -168,7 +168,9 @@ set_args(int argc , char *argv[])
 		}
 		free(url);
 		ac += 3;
-	    }
+	    } else
+		userid = argv[1];
+	    ac++; argc--; argv++;
 	    break;
 
 	case 1: mppass = argv[1]; ac++; argc--; argv++; break;
@@ -237,7 +239,8 @@ process_connection(int socket_desc)
 	FD_ZERO(&wfds);
 	FD_ZERO(&efds);
 
-	FD_SET(tty_ifd, &rfds);      /* Data from the TTY */
+	if (tty_enabled)
+	    FD_SET(tty_ifd, &rfds);  /* Data from the TTY */
 	FD_SET(socket_desc, &efds);  /* Exception on the socket */
 	FD_SET(socket_desc, &rfds);  /* Data from the socket */
 
@@ -251,9 +254,8 @@ process_connection(int socket_desc)
 	}
 	if (rv == 0) {
 	    /* TICK: The select timed out, anything to do? */
-#ifndef NO_TICKER
+	    if (script_ticker(socket_desc)) continue;
 	    ticker(socket_desc);
-#endif
 	    continue;
 	}
 
@@ -310,9 +312,8 @@ process_connection(int socket_desc)
 	    }
 	}
 
-#ifndef NO_TICKER
+	if (script_ticker(socket_desc)) continue;
 	ticker(socket_desc);
-#endif
     }
 
     if (rv < 0) perror("Network error");
@@ -361,6 +362,7 @@ process_packet(int packet_id, uint8_t * pkt, int socket_desc)
 #else
 	printf("Received map %d,%d,%d\n", cells_x,cells_y,cells_z);
 #endif
+	tty_enabled = 1;
 	break;
     case 0x06:
 	if (!map_blocks) break;
@@ -795,8 +797,15 @@ send_pkt_setblock(int socket_desc, int x, int y, int z, int block)
 	npos.x = x*32+16;
 	npos.y = y*32+64;
 	npos.z = z*32+16;
+
+        if (npos.z>posn.z) npos.h = 128;
+        else if (npos.z<posn.z) npos.h = 0;
+        else if (npos.x>posn.x) npos.h = 64;
+        else if (npos.x<posn.x) npos.h = -64;
+
 	send_pkt_move(socket_desc, npos);
 	moved = 1;
+	posn = npos;
     }
     uint8_t wbuffer[256];
     wbuffer[0] = 5;
@@ -809,8 +818,6 @@ send_pkt_setblock(int socket_desc, int x, int y, int z, int block)
     wbuffer[7] = (block!=0);
     wbuffer[8] = block?block:1;
     write(socket_desc, wbuffer, 9);
-    if (moved)
-	send_pkt_move(socket_desc, posn);
 }
 
 void
@@ -851,16 +858,39 @@ static struct tx_extn { char extname[65]; uint8_t vsn; } extns[] =
 void
 process_user_message(int socket_desc, char * txbuf)
 {
-    char cmd[64], xtra[64];
+    char cmd[64], fn[2048], xtra[64];
     int b, x, y, z;
 
-    // Convert a "/pl" command into a setblock packet
-    if (sscanf(txbuf, "/%60s %d %d %d %d %60s", cmd, &b, &x, &y, &z, xtra) == 5) {
-	if (b >= 0 && b < 66 && strcasecmp(cmd, "pl") == 0) {
-	    send_pkt_setblock(socket_desc, x, y, z, b);
+    if (sscanf(txbuf, "/%60s", cmd) == 1) {
+	if (strcasecmp(cmd, "pl") == 0) {
+	    // Convert a "/pl" command into a setblock packet
+	    if (sscanf(txbuf, "/%60s %d %d %d %d %60s", cmd, &b, &x, &y, &z, xtra) == 5) {
+		if (b >= 0 && b < 66) {
+		    send_pkt_setblock(socket_desc, x, y, z, b);
+		    return;
+		}
+	    }
+	} else if (strcasecmp(cmd, "export") == 0) {
+	    if (sscanf(txbuf, "/%60s %2040s %2s", cmd, fn, xtra) == 2)
+		save_lvl_file(fn, 6);
+	    else
+		fprintf(stderr, "Usage: /export filename.lvl\n");
 	    return;
+	} else if (strcasecmp(cmd, "script") == 0) {
+	    if (sscanf(txbuf, "/%60s %2040s %2s", cmd, fn, xtra) == 2)
+		set_script_file(fn);
+	    else
+		fprintf(stderr, "Usage: /script filename.mc\n");
+	    return;
+	} else if (strcasecmp(cmd, "delay") == 0) {
+	    x = y = -1;
+	    if (sscanf(txbuf, "/%60s %d %d", cmd, &x, &y) >= 2) {
+		set_script_delay(x, y);
+		return;
+	    }
 	}
     }
+
     send_pkt_message(socket_desc, txbuf);
 }
 
@@ -956,12 +986,11 @@ int msgsize[256] = {
     /* 0x33 */ 167,             /* DEFMODELPART */
     /* 0x34 */ 2,               /* RMMODEL */
     /* 0x35 */ 66,              /* PLUGINMSG */
-    /* 0x36 */ 12,              /* TELEPORT */
+    /* 0x36 */ 11,              /* TELEPORT */
     0
 
 };
 
-#ifndef NO_TICKER
 void
 ticker(int socket_desc)
 {
@@ -971,7 +1000,7 @@ ticker(int socket_desc)
     if (csec == 0) return;
     last_tick = tv;
 
-    if (!posn.valid) return;
+    if (!posn.valid || disable_ticker) return;
     posn_slower = (posn_slower+1)%200;
 
     if (posn_slower == 50 || posn_slower == 150) move_player(255);
@@ -1164,4 +1193,198 @@ is_clone(char * my_name, char * their_name)
     }
     return 1;
 }
-#endif
+
+/**************************************************************************/
+/*
+ * This writes a *.lvl file.
+ *
+ * The lvl file will only contain blocks; Physics and Zones are not supported.
+ */
+
+#define Block_Cust	66
+
+static void
+write_lvl_int16(FILE *ofd, int val)
+{
+    putc(val&0xFF, ofd);
+    putc((val>>8), ofd);
+}
+
+void
+write_lvl_header(FILE *savefile)
+{
+    write_lvl_int16(savefile, 1874);
+    write_lvl_int16(savefile, cells_x);
+    write_lvl_int16(savefile, cells_z);
+    write_lvl_int16(savefile, cells_y);
+    write_lvl_int16(savefile, spawn.x/32);
+    write_lvl_int16(savefile, spawn.z/32);
+    write_lvl_int16(savefile, (spawn.y+51)/32);
+    putc(spawn.h, savefile);
+    putc(spawn.v, savefile);
+    putc(0, savefile); // VisitAccess.Min;
+    putc(0, savefile); // BuildAccess.Min;
+}
+
+void
+write_lvl_block_section(FILE *savefile, int64_t len)
+{
+
+    for (intptr_t i = 0; i<len; i++) {
+	int b = map_blocks[i];
+	if (b >= Block_Cust) {
+	    if (b < 256)
+		b = 163; // "custom_block"
+	    else if (b < 512)
+		b = 198; // "custom_block_2"
+	    else
+		b = 199; // "custom_block_3"
+	}
+	putc(b & 0xFF, savefile);
+    }
+}
+
+void
+write_lvl_customblock_section(FILE *savefile, int64_t len)
+{
+    putc(0xBD, savefile);
+    int chunks_x = (cells_x+15)/16;
+    int chunks_y = (cells_y+15)/16;
+    int chunks_z = (cells_z+15)/16;
+
+    for (int y = 0; y < chunks_y; y++)
+	for (int z = 0; z < chunks_z; z++)
+	    for (int x = 0; x < chunks_x; x++)
+	    {
+		int flg = 0;
+		uint8_t chunk[4096];
+		memset(chunk, 0, sizeof(chunk));
+
+		for(int cy = 0; cy < 16; cy++)
+		{
+		    if (y+cy >= cells_y) continue;
+		    for(int cz = 0; cz < 16; cz++)
+		    {
+			if (z+cz >= cells_z) continue;
+			for(int cx = 0; cx < 16; cx++)
+			{
+			    if (x+cx >= cells_x) continue;
+
+			    uint64_t ind = World_Pack(x*16+cx,y*16+cy,z*16+cz);
+			    if (ind >= len) continue;
+			    int b = map_blocks[ind];
+			    if (b >= Block_Cust)
+				flg = 1;
+			    chunk[cy << 8 | cz << 4 | cx] = (b & 0xFF);
+			}
+		    }
+		}
+
+		putc(flg, savefile);
+		if (!flg) continue;
+
+		fwrite(chunk, sizeof(chunk), 1, savefile);
+	    }
+
+}
+
+int
+save_lvl_file(char * fn, int gzlevel)
+{
+    if (!fn || *fn == 0) return -1;
+    char cmdbuf[PATH_MAX];
+
+    fprintf(stderr, "Saving level file \"%s\".\n", fn);
+
+    snprintf(cmdbuf, sizeof(cmdbuf), "gzip -n -%d >'%s'", gzlevel, fn);
+    FILE *savefile = popen(cmdbuf, "w");
+
+    if (!savefile) {
+	perror(fn);
+	return -1;
+    }
+
+    write_lvl_header(savefile);
+
+    int64_t len = (int64_t)cells_x * cells_y * cells_z;
+    if (len > cells_xyz) len = cells_xyz;
+    if (len >= ((int64_t)2<<31)) len = ((int64_t)2<<31) -1;
+
+    write_lvl_block_section(savefile, len);
+
+    write_lvl_customblock_section(savefile, len);
+
+    // Empty physics = ""
+    // Empty Zones = ""
+
+    int rv = pclose(savefile);
+    if (rv) {
+	fprintf(stderr, "Save failed error Z%d\n", rv);
+    }
+
+    if (rv) return -1;
+    return 0;
+}
+
+/**************************************************************************/
+/*
+ * Trivial script running
+ */
+
+struct timeval last_script_tick;
+FILE * script_fd = 0;
+int ms_per_cmd = 26;
+int ms_available = 0;
+
+void
+set_script_delay(int next_delay, int per_cmd)
+{
+    if (next_delay > 0)
+	ms_available = -next_delay;
+    if (per_cmd >= 0 && per_cmd < 1000)
+	ms_per_cmd = per_cmd;
+}
+
+void
+set_script_file(char * fn)
+{
+    if (script_fd) { fclose(script_fd); script_fd = 0; }
+    ms_available = 0;
+    gettimeofday(&last_script_tick, 0);
+
+    script_fd = fopen(fn, "r");
+    if (!script_fd)
+	perror("Cannot open file");
+    printf("Script started\n");
+}
+
+int
+script_ticker(int socket_desc)
+{
+    if (!script_fd) return 0;
+
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    int msec = (tv.tv_sec - last_script_tick.tv_sec)*1000 + (tv.tv_usec - last_script_tick.tv_usec)/1000;
+    if (msec == 0) return ms_available >= 0;
+    last_script_tick = tv;
+
+    ms_available += msec;
+    while(ms_available > ms_per_cmd) {
+	char cmdbuf[1024];
+	if (fgets(cmdbuf, sizeof(cmdbuf), script_fd) == 0) {
+	    fclose(script_fd);
+	    script_fd = 0;
+	    printf("Script ended\n");
+	    posn = spawn;
+	    send_pkt_move(socket_desc, posn);
+	    return 0;
+	}
+	char * s = strchr(cmdbuf, '\n');
+	if (s) *s = 0;
+	process_user_message(socket_desc, cmdbuf);
+	ms_available -= ms_per_cmd;
+    }
+
+    return ms_available >= 0;
+}
